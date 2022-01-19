@@ -1,3 +1,15 @@
 Welcome to the project git hub page!
 
 This is a project about NMOSD IgG- patient classification.
+
+Abstract
+
+Identification of novel biomarkers for the diagnosis and prognosis in seronegative patients with overlapping multiple sclerosis and neuromyelitis optica clinical syndromes.
+
+Multiple sclerosis (MS) and neuromyelitis optica spectrum disorder (NMOSD) are separate autoimmune, inflammatory diseases of the brain, the optic nerve and the spinal cord with similar symptoms but distinct response to therapy. While a subset of NMOSD cases are associated with autoantibodies against aquaporin-4 or myelin oligodendrocyte glycoprotein and can be diagnosed with serum antibody assays, the remaining are antibody-negative and challenging to diagnose due to lack of biomarkers and clinical overlap with MS. It is likely that rather than being a homogenous entity, antibody-negative NMOSD constitutes a set of different diseases which require tailored treatment.
+
+The aim of the project is to 1) identify hidden subgroups within the antibody-negative NMOSD group using cross-sectional and longitudinal quantitative imaging biomarkers, 2)  identify diagnostic and prognostic biomarkers in antibody-negative NMOSD compared against the most likely diagnosis made 12 months after study inclusion.
+
+75 participants will be recruited to the study (25 antibody-negative NMOSD, 25 relapsing-remitting MS and 25 healthy controls). Each participant will undergo two magnetic resonance research scans of the brain and the spinal cord performed at an interval of 12 months. The scanning protocol will include structural T1- and T2-weighted sequences, a multi-echo T2*-weighted sequence, diffusion tensor imaging and myelin water imaging, which will allow for the assessment of brain and spinal cord volumetric measures, diffusion in normal-appearing white matter tracts, myelin water fraction within and outside of lesions, the presence of central vein inside lesions and lesions with a paramagnetic rim. Clinical data and quantitative imaging measures will be analysed using principal component analysis and k-means clustering to identify subgroups in an unsupervised way.
+
+Although the progress in CNS autoimmune/inflammatory diseases has led to characterisation of new clinical entities distinct from MS, there are still many patients with borderline presentations which are challenging to diagnose and treat. Identification of subgroups and diagnostic biomarkers within the NMOSD/MS cohort will provide guidance for clinicians to optimise management and prevent long-term disability.
