@@ -14,19 +14,19 @@ cd Brain/FLAIR
 
 echo "Brain extract FLAIR"
 
-#bet *spc_da-fl*.nii* FLAIR_bet.nii.gz -f 0.4 -R
+bet *spc_da-fl*.nii* FLAIR_bet.nii.gz -f 0.4 -R
 
 cd ../T1
 
 echo "Brain extract and perform bias field correction on T1"
 
-#bet *t1_mpr_iso_*.nii* T1_bet_biascorr.nii.gz -f 0.4 -B -R
+bet *t1_mpr_iso_*.nii* T1_bet_biascorr.nii.gz -f 0.4 -B -R
 
 echo "Register FLAIR to T1"
 
 cd ../FLAIR
 
-#flirt -in FLAIR_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_in_T1 -omat ../T1/FLAIR_to_T1.mat -dof 12 -cost normmi
+flirt -in FLAIR_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_in_T1 -omat ../T1/FLAIR_to_T1.mat -dof 12 -cost normmi
 
 echo "Check for lesion mask to determine whether lesion filling is needed"
 
@@ -37,15 +37,15 @@ then
 
     echo "Use the obtained transformation matrix to register FLAIR lesion mask to T1"
 
-    #flirt -in FLAIR_lesion_mask.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_lesion_mask_in_T1.nii.gz -init ../T1/FLAIR_to_T1.mat -applyxfm -interp nearestneighbour
+    flirt -in FLAIR_lesion_mask.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_lesion_mask_in_T1.nii.gz -init ../T1/FLAIR_to_T1.mat -applyxfm -interp nearestneighbour
 
     cd ../T1
 
     echo "Segment white matter from T1 to get white matter mask"
 
-    #fast T1_bet_biascorr.nii.gz
+    fast T1_bet_biascorr.nii.gz
 
-    #fslmaths T1_bet_biascorr_pve_2.nii.gz -thr 0.95 -bin WM_mask_not_lesion_filled.nii.gz
+    fslmaths T1_bet_biascorr_pve_2.nii.gz -thr 0.95 -bin WM_mask_not_lesion_filled.nii.gz
 
     #echo "Make sure the lesions in the mask are within white matter mask, because otherwise it is all fucked up" - maybe not
 
@@ -60,10 +60,6 @@ then
 else
 
     echo "There is no lesion mask"
-    
-    echo "Use the obtained transformation matrix to register FLAIR lesion mask to T1"
-
-    flirt -in FLAIR_lesion_mask.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_lesion_mask_in_T1.nii.gz -init ../T1/FLAIR_to_T1.mat -applyxfm -interp nearestneighbour
 
 fi
 
