@@ -5,13 +5,20 @@ for participantdir in `cat $1`; do
   cd $participantdir
 
   cd Brain/DWI
-
-  all_ap=(*AP*.nii*)
-  echo "${all_ap[1]}"
-  AP=(${all_ap[1]})
-
-  all_pa=(*PA*.nii*)
-  PA=(${all_pa[1]})
+  
+  #echo "Find and rename unnecesssary files"
+  
+  #find . -iname "*PA*nii*" -size -1M -exec mv {} PA_unused.nii.gz \;
+  
+  #find . -iname "*AP*nii*" -size -1M -exec mv {} AP_unused.nii.gz \;
+  
+  #all_ap=(*AP*.nii*)
+  #echo "${all_ap[1]}"
+  #AP=(${all_ap[1]})
+  AP=(*AP*nii*)
+  PA=(*PA*nii*) 
+  #all_pa=(*PA*.nii*)
+  #PA=(${all_pa[1]})
 
   echo $PA
 
@@ -92,3 +99,6 @@ for participantdir in `cat $1`; do
 done
 
 exit
+
+
+
