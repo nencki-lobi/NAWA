@@ -11,27 +11,9 @@ for participantdir in `cat $1`; do
 
   echo "Processing participant: $participant"
 
-  cd Brain/FLAIR
-
-  echo "Brain extract FLAIR"
-
-  bet *spc_da-fl*.nii* FLAIR_bet.nii.gz -f 0.4 -R
-
-  cd ../T1
-
-  echo "Brain extract and perform bias field correction on T1"
-
-  bet *t1_mpr_iso_*.nii* T1_bet_biascorr.nii.gz -f 0.4 -B -R
-
-  echo "Register FLAIR to T1"
-
-  cd ../FLAIR
-
-  flirt -in FLAIR_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_in_T1 -omat ../T1/FLAIR_to_T1.mat -dof 6 -cost normmi
+  cd Brain/MWF
 
   echo "Register VISTA to T1"
-
-  cd ../MWF
 
   fslcpgeom *ViSTa_REF_2mm*.nii* vista3D.nii
 
@@ -39,7 +21,7 @@ for participantdir in `cat $1`; do
 
   fslmaths vista3D.nii -mas MWF_ref_bet_mask.nii.gz vista_bet.nii.gz
 
-  flirt -in vista_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/MWF_to_T1.nii.gz -omat ../T1/MWF_to_T1.mat -dof 6 -cost normmi
+  flirt -in vista_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/MWF_to_T1.nii.gz -omat ../T1/MWF_to_T1.mat -dof 12 -cost normmi
 
   echo "Create an inverse transformation matrix to bring images from T1 to VISTA"
 
@@ -51,7 +33,7 @@ for participantdir in `cat $1`; do
 
   cd ../DWI
 
-  flirt -in mean_b0.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -omat ../T1/b0_to_T1.mat -dof 6
+  flirt -in mean_b0.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -omat ../T1/b0_to_T1.mat -dof 12 -cost normmi
 
   echo "Create an inverse transformation matrix to bring images from T1 to b0"
 
@@ -66,25 +48,15 @@ for participantdir in `cat $1`; do
   if [ -e FLAIR_lesion_mask.nii.gz ]
   then
 
-      echo "The lesion mask exists"
-
-      echo "Use the obtained transformation matrix to register FLAIR lesion mask to T1"
-
-      flirt -in FLAIR_lesion_mask.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/FLAIR_lesion_mask_in_T1.nii.gz -init ../T1/FLAIR_to_T1.mat -applyxfm -interp nearestneighbour
-
-      echo "Use the lesion mask to perform the T1 lesion filling"
-
       cd ../T1
 
-      lesion_filling -i *t1_mpr_iso_*.nii* -l FLAIR_lesion_mask_in_T1.nii.gz -o T1_filled.nii.gz
-
-      lesion_filling -i T1_bet_biascorr.nii.gz -l FLAIR_lesion_mask_in_T1.nii.gz -o T1_filled_bet.nii.gz
+      echo "The lesion mask exists"
 
       echo "Segment the T1 lesion filled image to obtain white matter (WM) mask"
 
-      fast T1_filled_bet.nii.gz
+      fast T1_filled_bet_fixed.nii.gz
 
-      fslmaths T1_filled_bet_pve_2.nii.gz -thr 0.95 -bin WM_mask.nii.gz
+      fslmaths T1_filled_bet_fixed_pve_2.nii.gz -thr 0.95 -bin WM_mask.nii.gz
 
       echo "Bring WM mask to DWI"
 
@@ -172,7 +144,7 @@ for participantdir in `cat $1`; do
 
   cd ../DWI
 
-  echo "Restrict NAWM mask to brain mask in MWI"
+  echo "Restrict NAWM mask to brain mask in DWI"
 
   fslmaths NAWM_in_DWI.nii.gz -mas mask.nii NAWM_in_DWI_masked.nii.gz
 
@@ -204,7 +176,7 @@ for participantdir in `cat $1`; do
 
   cd ../MWF
 
-  echo "Restrict NAWM mask to brain mask in MWI"
+  echo "Restrict NAWM mask to brain mask in MWF"
 
   fslmaths NAWM_in_MWF.nii.gz -mas MWF_ref_bet_mask.nii.gz NAWM_in_MWF_masked.nii.gz
 
@@ -226,8 +198,8 @@ echo "Create a csv file with all the necessary stats"
 
 echo "Find a file matches recursively in directory, concat them and drop duplicate headers:"
 
-cd /home/pjakuszyk/PJ_gRatio
+cd /home/pjakuszyk/seropositive_project
 
-find /home/pjakuszyk/PJ_gRatio/Preliminary/Participants/ -type f -name 'stats.csv' -exec cat {} \; > stats_combo.csv; awk '{if (!($0 in x)) {print $0; x[$0]=1} }' stats_combo.csv > aMWF_DTI_NODDI_stats_nice.csv
+find /home/pjakuszyk/seropositive_project -type f -name 'stats.csv' -exec cat {} \; > stats_combo.csv; awk '{if (!($0 in x)) {print $0; x[$0]=1} }' stats_combo.csv > aMWF_DTI_NODDI_stats_nice.csv
 
 exit

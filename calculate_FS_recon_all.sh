@@ -18,9 +18,9 @@ if [ -e FLAIR_lesion_mask.nii.gz ]
 then
 
     echo "The lesion mask exists"
-    
+
     cd ../T1
-    
+
     echo "Use lesion flilled T1 to perform recon-all"
 
     singularity exec /opt/software/bids_freesurfer.simg recon-all -s $participant -i T1_filled_fixed.nii.gz -sd /home/pjakuszyk/freesurfer_output/ -all
@@ -40,6 +40,19 @@ fi
 echo "Make a text file with last lines from recon-all.log"
 
 cd /home/pjakuszyk/seropositive_project
+
+if [ -d "FS_stats/" ]
+then
+
+    echo "The FS_stats folder exists"
+
+else
+
+  echo "The FS_stats folder does not exist -- creating the folder"
+
+  mkdir FS_stats
+
+fi
 
 recon_last_line=$(tail -1 /home/pjakuszyk/freesurfer_output/$participant/scripts/recon-all.log)
 
