@@ -21,7 +21,7 @@ for participantdir in `cat $1`; do
 
   fslmaths vista3D.nii -mas MWF_ref_bet_mask.nii.gz vista_bet.nii.gz
 
-  flirt -in vista_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/MWF_to_T1.nii.gz -omat ../T1/MWF_to_T1.mat -dof 12 -cost normmi
+  flirt -in vista_bet.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/MWF_to_T1.nii.gz -omat ../T1/MWF_to_T1.mat -dof 6 -cost normmi
 
   echo "Create an inverse transformation matrix to bring images from T1 to VISTA"
 
@@ -33,7 +33,7 @@ for participantdir in `cat $1`; do
 
   cd ../DWI
 
-  flirt -in mean_b0.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -omat ../T1/b0_to_T1.mat -dof 12 -cost normmi
+  flirt -in mean_b0.nii.gz -ref ../T1/T1_bet_biascorr.nii.gz -out ../T1/b0_in_T1.nii.gz -omat ../T1/b0_to_T1.mat -dof 6 -cost normmi
 
   echo "Create an inverse transformation matrix to bring images from T1 to b0"
 
@@ -60,23 +60,47 @@ for participantdir in `cat $1`; do
 
       echo "Bring WM mask to DWI"
 
-      flirt -in WM_mask.nii.gz  -ref ../DWI/mean_b0.nii.gz -applyxfm -init T1_to_b0.mat -out ../DWI/WM_mask_in_DWI.nii.gz -interp nearestneighbour
+      flirt -in WM_mask.nii.gz  -ref ../DWI/mean_b0.nii.gz -applyxfm -init T1_to_b0.mat -out ../DWI/WM_mask_in_DWI.nii.gz -interp trilinear
+
+      echo "Binarize white matter mask with a large threshold to avoid partial volume effect"
+
+      fslmaths ../DWI/WM_mask_in_DWI.nii.gz -thr 0.7 -bin ../DWI/WM_mask_in_DWI_bin.nii.gz
 
       echo "Bring WM mask to MWF"
 
-      flirt -in WM_mask.nii.gz  -ref ../MWF/vista_bet.nii.gz -applyxfm -init T1_to_MWF.mat -out ../MWF/WM_mask_in_MWF.nii.gz -interp nearestneighbour
+      flirt -in WM_mask.nii.gz  -ref ../MWF/vista_bet.nii.gz -applyxfm -init T1_to_MWF.mat -out ../MWF/WM_mask_in_MWF.nii.gz -interp trilinear
+
+      echo "Binarize white matter  mask with a large threshold to avoid partial volume effect"
+
+      fslmaths ../MWF/WM_mask_in_MWF.nii.gz -thr 0.7 -bin ../MWF/WM_mask_in_MWF_bin.nii.gz
 
       echo "Bring lesion mask to DWI"
 
       convert_xfm -omat FLAIR_to_b0.mat -concat T1_to_b0.mat FLAIR_to_T1.mat
 
-      flirt -in ../FLAIR/FLAIR_lesion_mask.nii.gz  -ref ../DWI/mean_b0.nii.gz -applyxfm -init FLAIR_to_b0.mat -out ../DWI/lesions_in_b0.nii.gz -interp nearestneighbour
+      flirt -in ../FLAIR/FLAIR_lesion_mask.nii.gz  -ref ../DWI/mean_b0.nii.gz -applyxfm -init FLAIR_to_b0.mat -out ../DWI/lesions_in_b0.nii.gz -interp trilinear
+
+      echo "Binarize lesion mask with a low threshold to include partial volume edges"
+
+      fslmaths ../DWI/lesions_in_b0.nii.gz -thr 0.3 -bin ../DWI/lesions_in_b0_bin.nii.gz
+
+      echo "Restrict lesion mask to brain mask in DWI"
+
+      fslmaths ../DWI/lesions_in_b0_bin.nii.gz -mas ../DWI/mask.nii ../DWI/lesions_in_DWI_masked.nii.gz
 
       echo "Bring lesion mask to MWF"
 
       convert_xfm -omat FLAIR_to_MWF.mat -concat T1_to_MWF.mat FLAIR_to_T1.mat
 
-      flirt -in ../FLAIR/FLAIR_lesion_mask.nii.gz  -ref ../MWF/vista_bet.nii.gz -applyxfm -init FLAIR_to_MWF.mat -out ../MWF/lesions_in_MWF.nii.gz -interp nearestneighbour
+      flirt -in ../FLAIR/FLAIR_lesion_mask.nii.gz  -ref ../MWF/vista_bet.nii.gz -applyxfm -init FLAIR_to_MWF.mat -out ../MWF/lesions_in_MWF.nii.gz -interp trilinear
+
+      echo "Binarize lesion mask with a low threshold to include partial volume edges"
+
+      fslmaths ../MWF/lesions_in_MWF.nii.gz -thr 0.3 -bin ../MWF/lesions_in_MWF_bin.nii.gz
+
+      echo "Restrict lesion mask to brain mask in MWF"
+
+      fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/lesions_in_MWF_masked.nii.gz
 
       echo "Calculate and store DTI, NODDI and MWF values for the lesioned WM"
 
@@ -84,41 +108,41 @@ for participantdir in `cat $1`; do
 
       echo "Store mean fractional anisotropy in lesioned WM in a variable"
 
-      FA_lesions=$(fslstats FA.nii.gz -k lesions_in_b0.nii.gz -M)
+      FA_lesions=$(fslstats FA.nii.gz -k lesions_in_DWI_masked.nii.gz -M)
 
       echo "Store mean mean diffusivity in lesioned WM in a variable"
 
-      MD_lesions=$(fslstats MD.nii.gz -k lesions_in_b0.nii.gz -M)
+      MD_lesions=$(fslstats MD.nii.gz -k lesions_in_DWI_masked.nii.gz -M)
 
       echo "Store mean radial diffusivity in lesioned WM in a variable"
 
-      RD_lesions=$(fslstats RD.nii.gz -k lesions_in_b0.nii.gz -M)
+      RD_lesions=$(fslstats RD.nii.gz -k lesions_in_DWI_masked.nii.gz -M)
 
       echo "Store mean neurite density in lesioned WM in a variable"
 
-      ND_lesions=$(fslstats NODDI_ficvf.nii -k lesions_in_b0.nii.gz -M)
+      ND_lesions=$(fslstats NODDI_ficvf.nii -k lesions_in_DWI_masked.nii.gz -M)
 
       echo "Store mean orientation dispertion index in lesioned WM in a variable"
 
-      ISO_lesions=$(fslstats NODDI_fiso.nii -k lesions_in_b0.nii.gz -M)
+      ISO_lesions=$(fslstats NODDI_fiso.nii -k lesions_in_DWI_masked.nii.gz -M)
 
       echo "Store mean orientation dispertion in lesioned WM in a variable"
 
-      ODI_lesions=$(fslstats NODDI_odi.nii -k lesions_in_b0.nii.gz -M)
+      ODI_lesions=$(fslstats NODDI_odi.nii -k lesions_in_DWI_masked.nii.gz -M)
 
       cd ../MWF
 
       echo "Store mean apparent myelin water fraction in lesioned WM"
 
-      aMWF_lesions=$(fslstats vista3D.nii -k lesions_in_MWF.nii.gz -M)
+      aMWF_lesions=$(fslstats vista3D.nii -k lesions_in_MWF_masked.nii.gz -M)
 
       echo "Subtract lesion mask from white matter mask to create NAWM (DWI, WMF)"
 
-      fslmaths lesions_in_MWF.nii.gz -binv -mul WM_mask_in_MWF.nii.gz NAWM_in_MWF.nii.gz
+      fslmaths lesions_in_MWF_bin.nii.gz -binv -mul WM_mask_in_MWF_bin.nii.gz NAWM_in_MWF.nii.gz
 
       cd ../DWI
 
-      fslmaths lesions_in_b0.nii.gz -binv -mul WM_mask_in_DWI.nii.gz NAWM_in_DWI.nii.gz
+      fslmaths lesions_in_b0_bin.nii.gz -binv -mul WM_mask_in_DWI_bin.nii.gz NAWM_in_DWI.nii.gz
 
   else
 
@@ -128,17 +152,41 @@ for participantdir in `cat $1`; do
 
       echo "Segment the T1 image"
 
-      fast T1_bet_biascorr.nii.gz
+      #fast T1_bet_biascorr.nii.gz
 
-      fslmaths T1_bet_biascorr_pve_2.nii.gz -thr 0.95 -bin NAWM_mask.nii.gz
+      #fslmaths T1_bet_biascorr_pve_2.nii.gz -thr 0.95 -bin NAWM_mask.nii.gz
 
       echo "Bring NAWM mask to DWI"
 
-      flirt -in NAWM_mask.nii.gz  -ref ../DWI/mean_b0.nii.gz -applyxfm -init T1_to_b0.mat -out ../DWI/NAWM_in_DWI.nii.gz -interp nearestneighbour
+      flirt -in NAWM_mask.nii.gz  -ref ../DWI/mean_b0.nii.gz -applyxfm -init T1_to_b0.mat -out ../DWI/NAWM_in_DWI.nii.gz -interp trilinear
+
+      echo "Binarize white matter mask with a large threshold to avoid partial volume effect"
+
+      fslmaths ../DWI/NAWM_in_DWI.nii.gz -thr 0.7 -bin ../DWI/NAWM_in_DWI_bin.nii.gz
 
       echo "Bring NAWM mask to MWF"
 
-      flirt -in NAWM_mask.nii.gz  -ref ../MWF/vista_bet.nii.gz -applyxfm -init T1_to_MWF.mat -out ../MWF/NAWM_in_MWF.nii.gz -interp nearestneighbour
+      flirt -in NAWM_mask.nii.gz  -ref ../MWF/vista_bet.nii.gz -applyxfm -init T1_to_MWF.mat -out ../MWF/NAWM_in_MWF.nii.gz -interp trilinear
+
+      echo "Binarize white matter  mask with a large threshold to avoid partial volume effect"
+
+      fslmaths ../MWF/NAWM_in_MWF.nii.gz -thr 0.7 -bin ../MWF/NAWM_in_MWF_bin.nii.gz
+
+      echo "Create empty variables for healthy participants"
+
+      FA_lesions=""
+
+      MD_lesions=""
+
+      RD_lesions=""
+
+      ND_lesions=""
+
+      ISO_lesions=""
+
+      ODI_lesions=""
+
+      aMWF_lesions=""
 
   fi
 
