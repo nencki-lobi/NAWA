@@ -5,18 +5,18 @@ for participantdir in `cat $1`; do
   cd $participantdir
 
   cd Brain/DWI
-  
+
   #echo "Find and rename unnecesssary files"
-  
+
   #find . -iname "*PA*nii*" -size -1M -exec mv {} PA_unused.nii.gz \;
-  
+
   #find . -iname "*AP*nii*" -size -1M -exec mv {} AP_unused.nii.gz \;
-  
+
   #all_ap=(*AP*.nii*)
   #echo "${all_ap[1]}"
   #AP=(${all_ap[1]})
   AP=(*AP*nii*)
-  PA=(*PA*nii*) 
+  PA=(*PA*nii*)
   #all_pa=(*PA*.nii*)
   #PA=(${all_pa[1]})
 
@@ -96,9 +96,10 @@ for participantdir in `cat $1`; do
   echo "Convert preprocessed DWI image to nifti and extract bvals and bvecs (NODDI)"
   mrconvert den_preproc_unbiased.mif den_preproc_unbiased.nii -export_grad_fsl den_preproc_unbiased.bvec den_preproc_unbiased.bval
 
+  echo "Extract b-shell close to a 2500 to use in fixel based analysis"
+
+  dwiextract -shell 0,2500 den_preproc_unbiased.mif dwi_singleshell_2500.mif
+
 done
 
 exit
-
-
-
