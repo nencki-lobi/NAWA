@@ -29,8 +29,15 @@ participantdir=$1
 
 cd $participantdir
 
+participant=$(basename $participantdir)
+
+date=$(date)
+
+echo "Processing participant: $participant"
+
 cd Brain/T1
 
+: '
 if [ -e ../FLAIR/FLAIR_lesion_mask.nii.gz ]
 then
 
@@ -87,12 +94,116 @@ applywarp -r ../MWF/vista_bet.nii.gz -i Optic_Radiation.nii.gz -w MNItoT1_warp.n
 
 
 #Binarise the masks:
-fslmaths ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz -thr 0.7 -bin ../DWI/JHU_Corpus_Callosum_in_b0_bin.nii.gz
-fslmaths ../DWI/JHU_Cortico_Spinal_Tract_in_b0.nii.gz -thr 0.7 -bin ../DWI/JHU_Cortico_Spinal_Tract_in_b0_bin.nii.gz
-fslmaths ../DWI/JHU_Optic_Radiation_in_b0.nii.gz -thr 0.7 -bin ../DWI/JHU_Optic_Radiation_in_b0_bin.nii.gz
+fslmaths ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz -thr 0.9 -bin ../DWI/JHU_Corpus_Callosum_in_b0_bin.nii.gz
+fslmaths ../DWI/JHU_Cortico_Spinal_Tract_in_b0.nii.gz -thr 0.9 -bin ../DWI/JHU_Cortico_Spinal_Tract_in_b0_bin.nii.gz
+fslmaths ../DWI/JHU_Optic_Radiation_in_b0.nii.gz -thr 0.9 -bin ../DWI/JHU_Optic_Radiation_in_b0_bin.nii.gz
 
-fslmaths ../MWF/JHU_Corpus_Callosum_in_MWF.nii.gz -thr 0.7 -bin ../MWF/JHU_Corpus_Callosum_in_MWF_bin.nii.gz
-fslmaths ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz -thr 0.7 -bin ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_bin.nii.gz
-fslmaths ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz -thr 0.7 -bin ../MWF/JHU_Optic_Radiation_in_MWF_bin.nii.gz
+fslmaths ../MWF/JHU_Corpus_Callosum_in_MWF.nii.gz -thr 0.9 -bin ../MWF/JHU_Corpus_Callosum_in_MWF_bin.nii.gz
+fslmaths ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz -thr 0.9 -bin ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_bin.nii.gz
+fslmaths ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz -thr 0.9 -bin ../MWF/JHU_Optic_Radiation_in_MWF_bin.nii.gz
+'
+
+if [ -e ../FLAIR/FLAIR_lesion_mask.nii.gz ]
+then
+
+  #Subtract lesion mask from the roi to have only healthy appearing tissue
+
+  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz ../DWI/JHU_Corpus_Callosum_in_b0_NAWM.nii.gz
+  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Cortico_Spinal_Tract_in_b0.nii.gz ../DWI/JHU_Cortico_Spinal_Tract_in_b0_NAWM.nii.gz
+  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Optic_Radiation_in_b0.nii.gz ../DWI/JHU_Optic_Radiation_in_b0_NAWM.nii.gz
+
+  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Corpus_Callosum_in_MWF.nii.gz ../MWF/JHU_Corpus_Callosum_in_MWF_NAWM.nii.gz
+  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_NAWM.nii.gz
+  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz ../MWF/JHU_Optic_Radiation_in_MWF_NAWM.nii.gz
+
+  #Restrict ROI masks to brain mask in DWI
+
+  fslmaths ../DWI/JHU_Corpus_Callosum_in_b0_NAWM.nii.gz -mas ../DWI/mask.nii ../DWI/JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz
+  fslmaths ../DWI/JHU_Cortico_Spinal_Tract_in_b0_NAWM.nii.gz -mas ../DWI/mask.nii ../DWI/JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz
+  fslmaths ../DWI/JHU_Optic_Radiation_in_b0_NAWM.nii.gz -mas ../DWI/mask.nii ../DWI/JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz
+
+  fslmaths ../MWF/JHU_Corpus_Callosum_in_MWF_NAWM.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/JHU_Corpus_Callosum_in_MWF_NAWM_masked.nii.gz
+  fslmaths ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_NAWM.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_NAWM_masked.nii.gz
+  fslmaths ../MWF/JHU_Optic_Radiation_in_MWF_NAWM.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/JHU_Optic_Radiation_in_MWF_NAWM_masked.nii.gz
+
+
+else
+
+  #Restrict ROI masks to brain mask in DWI
+
+  fslmaths ../DWI/JHU_Corpus_Callosum_in_b0_bin.nii.gz -mas ../DWI/mask.nii ../DWI/JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz
+  fslmaths ../DWI/JHU_Cortico_Spinal_Tract_in_b0_bin.nii.gz -mas ../DWI/mask.nii ../DWI/JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz
+  fslmaths ../DWI/JHU_Optic_Radiation_in_b0_bin.nii.gz -mas ../DWI/mask.nii ../DWI/JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz
+
+  fslmaths ../MWF/JHU_Corpus_Callosum_in_MWF_bin.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/JHU_Corpus_Callosum_in_MWF_NAWM_masked.nii.gz
+  fslmaths ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_bin.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_NAWM_masked.nii.gz
+  fslmaths ../MWF/JHU_Optic_Radiation_in_MWF_bin.nii.gz -mas ../MWF/MWF_ref_bet_mask.nii.gz ../MWF/JHU_Optic_Radiation_in_MWF_NAWM_masked.nii.gz
+
+fi
+
+#Calculate and store DTI, NODDI and MWF values for the ROIs
+
+#Store mean fractional anisotropy in NAWM in a variable
+
+cd ../DWI
+
+FA_CC=$(fslstats FA.nii.gz -k JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz -M)
+FA_CST=$(fslstats FA.nii.gz -k JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz -M)
+FA_OR=$(fslstats FA.nii.gz -k JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz -M)
+
+#Store mean mean diffusivity in NAWM in a variable
+
+MD_CC=$(fslstats MD.nii.gz -k JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz -M)
+MD_CST=$(fslstats MD.nii.gz -k JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz -M)
+MD_OR=$(fslstats MD.nii.gz -k JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz -M)
+
+#Store mean radial diffusivity in NAWM in a variable
+
+RD_CC=$(fslstats RD.nii.gz -k JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz -M)
+RD_CST=$(fslstats RD.nii.gz -k JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz -M)
+RD_OR=$(fslstats RD.nii.gz -k JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz -M)
+
+#Store mean neurite density in NAWM in a variable
+
+ND_CC=$(fslstats NODDI_ficvf.nii.gz -k JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz -M)
+ND_CST=$(fslstats NODDI_ficvf.nii.gz -k JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz -M)
+ND_OR=$(fslstats NODDI_ficvf.nii.gz -k JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz -M)
+
+#Store mean orientation dispersion index in NAWM in a variable
+
+ODI_CC=$(fslstats NODDI_odi.nii.gz -k JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz -M)
+ODI_CST=$(fslstats NODDI_odi.nii.gz -k JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz -M)
+ODI_OR=$(fslstats NODDI_odi.nii.gz -k JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz -M)
+
+#Store mean isotropic water component in NAWM in a variable
+
+ISO_CC=$(fslstats NODDI_fiso.nii.gz -k JHU_Corpus_Callosum_in_b0_NAWM_masked.nii.gz -M)
+ISO_CST=$(fslstats NODDI_fiso.nii.gz -k JHU_Cortico_Spinal_Tract_in_b0_NAWM_masked.nii.gz -M)
+ISO_OR=$(fslstats NODDI_fiso.nii.gz -k JHU_Optic_Radiation_in_b0_NAWM_masked.nii.gz -M)
+
+cd ../MWF
+
+#Store mean apparent myelin water fraction in NAWM in a variable
+
+aMWF_CC=$(fslstats vista3D.nii.gz -k JHU_Corpus_Callosum_in_MWF_NAWM_masked.nii.gz -M)
+aMWF_CST=$(fslstats vista3D.nii.gz -k JHU_Cortico_Spinal_Tract_in_MWF_NAWM_masked.nii.gz -M)
+aMWF_OR=$(fslstats vista3D.nii.gz -k JHU_Optic_Radiation_in_MWF_NAWM_masked.nii.gz -M)
+
+cd ../../
+
+#Make a stats csv file
+
+echo "participant,date,FA_CC,FA_CST,FA_OR,MD_CC,MD_CST,MD_OR,RD_CC,RD_CST,RD_OR,ND_CC,ND_CST,ND_OR,ODI_CC,ODI_CST,ODI_OR,ISO_CC,ISO_CST,ISO_OR,aMWF_CC,aMWF_CST,aMWF_OR" > stats_ROI.csv
+
+echo "$participant,$date,$FA_CC,$FA_CST,$FA_OR,$MD_CC,$MD_CST,$MD_OR,$RD_CC,$RD_CST,$RD_OR,$ND_CC,$ND_CST,$ND_OR,$ODI_CC,$ODI_CST,$ODI_OR,$ISO_CC,$ISO_CST,$ISO_OR,$aMWF_CC,$aMWF_CST,$aMWF_OR" >> stats_ROI.csv
+
+#Create a csv file with all the necessary stats
+
+#Find a file matches recursively in directory, concat them and drop duplicate headers
+
+cd /home/pjakuszyk/seropositive_project
+
+find /home/pjakuszyk/seropositive_project -type f -name 'stats_ROI.csv' -exec cat {} \; > stats_combo_roi.csv; awk '{if (!($0 in x)) {print $0; x[$0]=1} }' stats_combo_roi.csv > aMWF_DTI_NODDI_stats_ROI.csv
+
 
 exit
