@@ -14,13 +14,13 @@ cd Brain/FLAIR
 
 echo "Brain extract FLAIR"
 
-bet *spc_da-fl*.nii* FLAIR_bet.nii.gz -f 0.4 -R
+bet *spc_da-fl*.nii* FLAIR_bet.nii.gz -f 0.5 -R
 
 cd ../T1
 
 echo "Brain extract and perform bias field correction on T1"
 
-bet *t1_mpr_iso_*.nii* T1_bet_biascorr.nii.gz -f 0.4 -B -R
+bet *t1_mpr_iso_*.nii* T1_bet_biascorr.nii.gz -f 0.5 -B -R
 
 echo "Register FLAIR to T1"
 

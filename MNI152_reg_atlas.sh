@@ -91,7 +91,7 @@ applywarp -r ../MWF/vista_bet.nii.gz -i Corpus_Callosum.nii.gz -w MNItoT1_warp.n
 applywarp -r ../MWF/vista_bet.nii.gz -i Cortico_Spinal_Tract.nii.gz -w MNItoT1_warp.nii.gz --postmat=T1_to_MWF.mat -o ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz
 applywarp -r ../MWF/vista_bet.nii.gz -i Optic_Radiation.nii.gz -w MNItoT1_warp.nii.gz --postmat=T1_to_MWF.mat -o ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz
 
-
+'
 
 #Binarise the masks:
 fslmaths ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz -thr 0.9 -bin ../DWI/JHU_Corpus_Callosum_in_b0_bin.nii.gz
@@ -101,20 +101,20 @@ fslmaths ../DWI/JHU_Optic_Radiation_in_b0.nii.gz -thr 0.9 -bin ../DWI/JHU_Optic_
 fslmaths ../MWF/JHU_Corpus_Callosum_in_MWF.nii.gz -thr 0.9 -bin ../MWF/JHU_Corpus_Callosum_in_MWF_bin.nii.gz
 fslmaths ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz -thr 0.9 -bin ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_bin.nii.gz
 fslmaths ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz -thr 0.9 -bin ../MWF/JHU_Optic_Radiation_in_MWF_bin.nii.gz
-'
+
 
 if [ -e ../FLAIR/FLAIR_lesion_mask.nii.gz ]
 then
 
   #Subtract lesion mask from the roi to have only healthy appearing tissue
 
-  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz ../DWI/JHU_Corpus_Callosum_in_b0_NAWM.nii.gz
-  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Cortico_Spinal_Tract_in_b0.nii.gz ../DWI/JHU_Cortico_Spinal_Tract_in_b0_NAWM.nii.gz
-  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Optic_Radiation_in_b0.nii.gz ../DWI/JHU_Optic_Radiation_in_b0_NAWM.nii.gz
+  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Corpus_Callosum_in_b0_bin.nii.gz ../DWI/JHU_Corpus_Callosum_in_b0_NAWM.nii.gz
+  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Cortico_Spinal_Tract_in_b0_bin.nii.gz ../DWI/JHU_Cortico_Spinal_Tract_in_b0_NAWM.nii.gz
+  fslmaths ../DWI/lesions_in_b0_bin.nii.gz -binv -mul ../DWI/JHU_Optic_Radiation_in_b0_bin.nii.gz ../DWI/JHU_Optic_Radiation_in_b0_NAWM.nii.gz
 
-  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Corpus_Callosum_in_MWF.nii.gz ../MWF/JHU_Corpus_Callosum_in_MWF_NAWM.nii.gz
-  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_NAWM.nii.gz
-  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz ../MWF/JHU_Optic_Radiation_in_MWF_NAWM.nii.gz
+  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Corpus_Callosum_in_MWF_bin.nii.gz ../MWF/JHU_Corpus_Callosum_in_MWF_NAWM.nii.gz
+  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_bin.nii.gz ../MWF/JHU_Cortico_Spinal_Tract_in_MWF_NAWM.nii.gz
+  fslmaths ../MWF/lesions_in_MWF_bin.nii.gz -binv -mul ../MWF/JHU_Optic_Radiation_in_MWF_bin.nii.gz ../MWF/JHU_Optic_Radiation_in_MWF_NAWM.nii.gz
 
   #Restrict ROI masks to brain mask in DWI
 
