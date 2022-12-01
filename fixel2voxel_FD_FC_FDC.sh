@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #In this script the fixel measures of FD, FC and FDC will be converted to voxel measures and assessed in NAWM and lesions
-#The resons for converting using specified paramateres are explained in https://community.mrtrix.org/t/fixel2voxel-how-to-extract-primary-secondary-and-tertiary-voxel-based-fd-maps/4394/2
+#The reasons for converting using specified paramateres are explained in https://community.mrtrix.org/t/fixel2voxel-how-to-extract-primary-secondary-and-tertiary-voxel-based-fd-maps/4394/2
 
 participantdir=$1
 
