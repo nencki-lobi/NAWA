@@ -62,23 +62,138 @@ done
 
 population_template template/fod_input -mask_dir template/mask_input template/wmfod_template.mif -voxel_size 1.25
 
+#Register the FOD image from each subject to the FOD template:
+
+foreach * : mrregister IN/Brain/DWI/wmfod_norm.mif -mask1 IN/Brain/DWI/dwi_mask_upsampled.mif ../template/wmfod_template.mif -nl_warp IN/Brain/DWI/subject2template_warp.mif IN/Brain/DWI/template2subject_warp.mif
+
+#Compute the template mask (intersection of all subject masks in template space)
+#To warp all masks into template space:
+
+foreach * : mrtransform IN/Brain/DWI/dwi_mask_upsampled.mif -warp IN/Brain/DWI/subject2template_warp.mif -interp nearest -datatype bit IN/Brain/DWI/dwi_mask_in_template_space.mif
+
+#Compute the template mask as the intersection of all warped masks:
+
+mrmath */Brain/DWI/dwi_mask_in_template_space.mif min ../template/template_mask.mif -datatype bit
+
+#Compute a white matter template analysis fixel mask
+
+fod2fixel -mask ../template/template_mask.mif -fmls_peak_value 0.06 ../template/wmfod_template.mif ../template/fixel_mask
+
+#You can manipulate the peak value threshold to obtain more fixels but be careful, to not get false positives
+#You can check the number of fixels with:
+mrinfo -size ../template/fixel_mask/directions.mif
+#It should contain several hundreds of thousands of fixels
+
+#Warp FOD images to template space without FOD reorientation, as reorientation will be performed in a separate subsequent step (after fixel segmentation):
+
+foreach * : mrtransform IN/Brain/DWI/wmfod_norm.mif -warp IN/Brain/DWI/subject2template_warp.mif -noreorientation IN/Brain/DWI/fod_in_template_space_NOT_REORIENTED.mif
+
+#Here we segment each FOD lobe to identify the number and orientation of fixels in each voxel. The output also contains the apparent fibre density (AFD) value per fixel (estimated as the FOD lobe integral):
+
+foreach * : fod2fixel -mask ../template/template_mask.mif IN/Brain/DWI/fod_in_template_space_NOT_REORIENTED.mif IN/Brain/DWI/fixel_in_template_space_NOT_REORIENTED -afd fd.mif
+
+#Here we reorient the fixels of all subjects in template space based on the local transformation at each voxel in the warps used previously:
+
+foreach * : fixelreorient IN/Brain/DWI/fixel_in_template_space_NOT_REORIENTED IN/Brain/DWI/subject2template_warp.mif IN/Brain/DWI/fixel_in_template_space
+
+#Assign subject fixels to template fixels
+
+foreach * : fixelcorrespondence IN/Brain/DWI/fixel_in_template_space/fd.mif ../template/fixel_mask ../template/fd PRE.mif
+
+#Compute the fibre cross-section (FC) metric
+
+foreach * : warp2metric IN/Brain/DWI/subject2template_warp.mif -fc ../template/fixel_mask ../template/fc IN.mif
+
+#However, for group statistical analysis of FC we recommend calculating the log(FC) to ensure data are centred around zero and normally distributed. Here, we create a separate fixel directory to store the log(FC) data and copy the fixel index and directions file across:
+
+mkdir ../template/log_fc
+cp ../template/fc/index.mif ../template/fc/directions.mif ../template/log_fc
+foreach * : mrcalc ../template/fc/IN.mif -log ../template/log_fc/IN.mif
+
+#Compute a combined measure of fibre density and cross-section (FDC)
+
+mkdir ../template/fdc
+cp ../template/fc/index.mif ../template/fdc
+cp ../template/fc/directions.mif ../template/fdc
+foreach * : mrcalc ../template/fd/IN.mif ../template/fc/IN.mif -mult ../template/fdc/IN.mif
+
+#Perform whole-brain fibre tractography on the FOD template
+
+cd ../template
+tckgen -angle 22.5 -maxlen 250 -minlen 10 -power 1.0 wmfod_template.mif -seed_image template_mask.mif -mask template_mask.mif -select 20000000 -cutoff 0.06 tracks_20_million.tck
+
+#Perform SIFT to reduce tractography biases in the whole-brain tractogram:
+
+tcksift tracks_20_million.tck wmfod_template.mif tracks_2_million_sift.tck -term_number 2000000
+
+#Generation of the fixel-fixel connectivity matrix based on the whole-brain streamlines tractogram is performed as follows:
+#For this you have to change the container to mrtrix3/mrtrix3 because the 3tss software verison does not contain the fixelconnectivity command
+
+fixelconnectivity fixel_mask/ tracks_2_million_sift.tck matrix/
+
+#Smoothing of fixel data is performed based on the sparse fixel-fixel connectivity matrix:
+
+fixelfilter fd smooth fd_smooth -matrix matrix/
+fixelfilter log_fc smooth log_fc_smooth -matrix matrix/
+fixelfilter fdc smooth fdc_smooth -matrix matrix/
+
+#Statistical analysis using CFE is performed separately for each metric (FD, log(FC), and FDC) as follows:
+
+######FD######
+#HC - SM
+fixelcfestats fd_smooth/ files.txt design_matrix.txt HC_SM_contrast.txt matrix/ stats_fd_HC_SM/
+
+fixelcfestats fd_smooth/ files_HC_SM.txt design_matrix_HC_SM.txt contrast_HC_SM_2.txt matrix/ stats_fd_HC_SM_2/ -nshuffles 500
+
+#SM - HC
+fixelcfestats fd_smooth/ files.txt design_matrix.txt SM_HC_contrast.txt matrix/ stats_fd_SM_HC/
+#HC - AQP4
+fixelcfestats fd_smooth/ files.txt design_matrix.txt HC_AQP4_contrast.txt matrix/ stats_fd_HC_AQP4/
+#AQP4 - SM
+fixelcfestats fd_smooth/ files.txt design_matrix.txt AQP4_SM_contrast.txt matrix/ stats_fd_AQP4_SM/
 
 
+#####FC########
+#HC - SM
+fixelcfestats log_fc_smooth/ files.txt design_matrix.txt HC_SM_contrast.txt matrix/ stats_log_fc_HC_SM/ -nshuffles 500
 
 
-dwiextract -shell 0,2500 den_preproc_unbiased.mif dwi_singleshell_2500.mif
+######FDC#######
+#HC - SM
+fixelcfestats fdc_smooth/ files.txt design_matrix.txt HC_SM_contrast.txt matrix/ stats_fdc_HC_SM/ -nshuffles 500
+
+#HC - AQP4
+fixelcfestats fdc_smooth/ files.txt design_matrix.txt HC_AQP4_contrast.txt matrix/ stats_fdc_HC_AQP4/ -nshuffles 500
+
+#AQP4-SM
+fixelcfestats fdc_smooth/ files.txt design_matrix.txt AQP4_SM_contrast.txt matrix/ stats_fdc_AQP4_SM/ -nshuffles 500
+
+#To calculate percentage decrease effect size for FC, FDC
+#If there is a column in the design matrix that contains the value 1 for all subjects in the control group and 0 for all other subjects, and if any & all nuisance regressors were de-meaned
+#prior to inserting them into the design matrix, then the relevant beta coefficient image provided by fixelcfestats (e.g. stats_fd/beta0.mif) can be interpreted directly as the control group mean.
+
+mrcalc stats_fdc_HC_SM/abs_effect.mif stats_fdc_HC_SM/beta0.mif -div 100 -mult stats_fdc_HC_SM/percentage_effect.mif
 
 
-for_each study/* : dwidenoise IN/dwi.mif IN/dwi_denoised.mif
+##Make max FD per voxel
+for_each * : fixel2voxel IN max fd_max/IN
 
-for_each home/pjakuszyk/seropositive_project/participants/*/Brain/DWI -nthreads 2 -test : dwiextract -shell 0,2500 IN/den_preproc_unbiased.mif IN/dwi_singleshell_2500.mif
+for_each * : mrconvert IN PRE.nii.gz
 
-for_each * -nthreads 2 : dwiextract -shell 0,2500 IN/Brain/DWI/den_preproc_unbiased.mif IN/Brain/DWI/dwi_singleshell_2500.mif
+mrregister  /usr/local/fsl/data/standard/FSL_HCP1065_FA_1mm.nii.gz -nl_warp template2standard_warp.mif standard2template_warp.mif
 
+mrtransform  /usr/local/fsl/data/ -warp Istandard2template_warp.mif atlas_in_fod_template.nii.gz
 
-for i in `cat participant_list.txt`; do
+echo "participant,fd_max" > stats_fd_max.csv
+for i in `cat ../../../participant_list.txt`; do
     echo "Current participant : ${i}"
-    cd participants/${i}/Brain/DWI
-    dwiextract -shell 0,2500 den_preproc_unbiased.mif dwi_singleshell_2500.mif
-    cd ../../../../
+    participant=${i}
+    fd_max=$(fslstats ${i}_noNAN.nii.gz -k ../../template2atlas/CC_in_fod_template_bin.nii.gz -M)
+    echo "$participant,$fd_max" >> stats_fd_max.csv
 done
+
+
+
+
+
+#https://community.mrtrix.org/t/what-does-fixelcfestats-exactly-do/2052
