@@ -28,7 +28,13 @@ for participantdir in `cat $1`; do
 
       for tract in `cat $projectdir/tract_list.txt`; do
 
-        tckedit ${dwidir}/tractseg_output/TOM_trackings/${tract} ${dwidir}/tractseg_output/TOM_trackings_NAWM/${tract} -exclude ${dwidir}/lesions_in_DWI_masked.nii.gz -force
+        mrresize -voxel 1.25 ${dwidir}/lesions_in_DWI_masked.nii.gz ${dwidir}/lesions_in_DWI_masked_upsampled.nii.gz -force
+
+        echo "Binarize lesion mask with a low threshold to include partial volume edges"
+
+        fslmaths ${dwidir}/lesions_in_DWI_masked_upsampled.nii.gz -thr 0.1 -bin ${dwidir}/lesions_in_DWI_masked_upsampled_bin.nii.gz
+
+        tckedit ${dwidir}/tractseg_output/TOM_trackings/${tract} ${dwidir}/tractseg_output/TOM_trackings_NAWM/${tract} -exclude ${dwidir}/lesions_in_DWI_masked_upsampled_bin.nii.gz -force
 
       done
 
@@ -51,7 +57,13 @@ for participantdir in `cat $1`; do
 
       for tract in `cat $projectdir/tract_list.txt`; do
 
-        tckedit ${dwidir}/tractseg_output/TOM_trackings/${tract} ${dwidir}/tractseg_output/TOM_trackings_NAWM/${tract} -exclude ${dwidir}/lesions_in_DWI_masked.nii.gz -force
+        mrresize -voxel 1.25 ${dwidir}/lesions_in_DWI_masked.nii.gz ${dwidir}/lesions_in_DWI_masked_upsampled.nii.gz -force
+
+        echo "Binarize lesion mask with a low threshold to include partial volume edges"
+
+        fslmaths ${dwidir}/lesions_in_DWI_masked_upsampled.nii.gz -thr 0.1 -bin ${dwidir}/lesions_in_DWI_masked_upsampled_bin.nii.gz
+
+        tckedit ${dwidir}/tractseg_output/TOM_trackings/${tract} ${dwidir}/tractseg_output/TOM_trackings_NAWM/${tract} -exclude ${dwidir}/lesions_in_DWI_masked_upsampled_bin.nii.gz -force
 
       done
 

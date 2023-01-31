@@ -8,6 +8,9 @@ Created on Mon Jan 23 11:07:54 2023
 import numpy as np
 import pandas as pd
 
+np.set_printoptions(precision=8, suppress=True, formatter={'float': '{: 0.8e}'.format})
+
+
 SM_patients =[
 'NAWA_010',
 'NAWA_035',
@@ -54,7 +57,7 @@ for SM_patient in SM_patients:
     df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
     df.replace(0,np.nan,inplace=True)
     df.fillna(mean_values_MS,inplace=True)
-    df.to_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';')
+    df.to_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';', index=False, float_format="%.18e")
     
 NMOSD_patients =[
 'NAWA_032',
@@ -101,7 +104,7 @@ for NMOSD_patient in NMOSD_patients:
     df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMOSD_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
     df.replace(0,np.nan,inplace=True)
     df.fillna(mean_values_NMOSD,inplace=True)
-    df.to_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMOSD_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';')
+    df.to_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMOSD_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';', index=False, float_format="%.18e")
     
 HC=[
 'NAWA_045',
@@ -127,7 +130,7 @@ HC=[
 
 for control in HC:
     df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{control}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
-    df.to_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{control}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';')
+    df.to_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{control}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';', index=False, float_format="%.18e")
     
 
 
