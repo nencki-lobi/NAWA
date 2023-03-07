@@ -12,9 +12,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 from reportlab.pdfgen import canvas
-from scipy.stats import ttest_ind
+from scipy.stats import ttest_ind, shapiro, t
 import statsmodels.stats.multitest as smm
 from scipy.stats import mannwhitneyu
+from math import sqrt
+from scipy.stats import ttest_rel
 
 np.set_printoptions(precision=8, suppress=True, formatter={'float': '{: 0.8e}'.format})
 
@@ -46,30 +48,46 @@ SM_patients =[
 # list to store each participant's data
 SM_bundles = []
 SM_bundles_long = []
+
+SM_bundles_lesion = []
+SM_bundles_lesion_long = []
 # loop through each participant
 for SM_patient in SM_patients:
     # read participant's csv file into a dataframe
-    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';')
-    
+    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
+    df_l = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
+
     # make a mean out of the 100 points sampled per tract 
     df = df.mean().to_frame().reset_index()
+    df_l = df_l.mean().to_frame().reset_index()
+ 
     # add participant id column to the dataframe
     df['Participant'] = SM_patient
+    df_l['Participant'] = SM_patient
+
     # bring it from long to wide format
     df_pivot = df.pivot(index='Participant', columns='index', values=0)
+    df_pivot_lesion = df_l.pivot(index='Participant', columns='index', values=0)
 
     # append participant's data to the list
     SM_bundles.append(df_pivot)
     SM_bundles_long.append(df)
+    
+    SM_bundles_lesion.append(df_pivot_lesion)
+    SM_bundles_lesion_long.append(df_l)
 
 # concatenate all participant's data into a single dataframe
 SM_bundles_all = pd.concat(SM_bundles)
 SM_bundles_long = pd.concat(SM_bundles_long)
 
+SM_bundles_lesion_all = pd.concat(SM_bundles_lesion)
+SM_bundles_lesion_long = pd.concat(SM_bundles_lesion_long)
+
 # save the result to a new csv file
-SM_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_mean_NDI.csv', index=False)
+SM_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_mean_NDI_nosubst.csv', index=False)
+SM_bundles_lesion_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_NDI_lesions.csv', index=False)
 
-
+'''
 #Plot the avergae bundle load
 sns.barplot(data=SM_bundles_long, x='index', y=0)
 # Add labels and title to the plot
@@ -79,8 +97,7 @@ plt.ylabel('Average NDI per bundle')
 plt.title('MS patients')
 # Show the plot
 plt.show()
-  
-        
+'''  
 
 NMO_patients =[
 'NAWA_032',
@@ -108,28 +125,46 @@ NMO_patients =[
 # list to store each participant's data
 NMO_bundles = []
 NMO_bundles_long = []
+
+NMO_bundles_lesion = []
+NMO_bundles_lesion_long = []
 # loop through each participant
 for NMO_patient in NMO_patients:
     # read participant's csv file into a dataframe
-    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';')
+    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
+    df_l = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
+
+    # make a mean out of the 100 points sampled per tract 
     df = df.mean().to_frame().reset_index()
+    df_l = df_l.mean().to_frame().reset_index()
+ 
     # add participant id column to the dataframe
     df['Participant'] = NMO_patient
+    df_l['Participant'] = NMO_patient
+
     # bring it from long to wide format
     df_pivot = df.pivot(index='Participant', columns='index', values=0)
+    df_pivot_lesion = df_l.pivot(index='Participant', columns='index', values=0)
 
     # append participant's data to the list
     NMO_bundles.append(df_pivot)
     NMO_bundles_long.append(df)
+    
+    NMO_bundles_lesion.append(df_pivot_lesion)
+    NMO_bundles_lesion_long.append(df_l)
 
 # concatenate all participant's data into a single dataframe
 NMO_bundles_all = pd.concat(NMO_bundles)
 NMO_bundles_long = pd.concat(NMO_bundles_long)
 
+NMO_bundles_lesion_all = pd.concat(NMO_bundles_lesion)
+NMO_bundles_lesion_long = pd.concat(NMO_bundles_lesion_long)
+
 # save the result to a new csv file
-NMO_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_mean_NDI.csv', index=False)
+NMO_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_mean_NDI_nosubs.csv', index=False)
+NMO_bundles_lesion_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_NDI_lesions.csv', index=False)
 
-
+'''
 #Plot the avergae bundle load
 sns.barplot(data=NMO_bundles_long, x='index', y=0)
 # Add labels and title to the plot
@@ -165,7 +200,7 @@ ax.legend(labels=['NMOSD','MS'], labelcolor=['lightpink','steelblue' ], title="D
 
 # show the plot
 plt.show()
-
+'''
 HC=[
 'NAWA_045',
 'NAWA_060',
@@ -194,7 +229,7 @@ HC_bundles_long = []
 # loop through each participant
 for subject in HC:
     # read participant's csv file into a dataframe
-    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{subject}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND_substituted.csv", sep=';')
+    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{subject}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
     df = df.mean().to_frame().reset_index()
     # add participant id column to the dataframe
     df['Participant'] = subject
@@ -212,6 +247,7 @@ HC_bundles_long = pd.concat(HC_bundles_long)
 # save the result to a new csv file
 HC_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/HC_tracts_mean_NDI.csv', index=False)
 
+'''
 #Plot the avergae bundle load
 sns.barplot(data=HC_bundles_long, x='index', y=0)
 # Add labels and title to the plot
@@ -247,7 +283,7 @@ ax.legend(labels=['HC','MS'], labelcolor=['teal','steelblue' ], title="Disease",
 
 # show the plot
 plt.show()
-
+'''
 
 ########### create a figure with three subplots ##########
 fig, ax = plt.subplots()
@@ -266,10 +302,10 @@ sns.barplot(data=SM_bundles_long, x='index', y=0, color="steelblue", ax=ax, ci=N
 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
 # set scale for y
-ax.set(ylim=(0.4, 0.8))
+ax.set(ylim=(0.35, 0.8))
 
 # set the title and axis labels
-ax.set_title("NDI in MS, NMOSD and HC")
+ax.set_title("Lesion-independent tracts NDI in MS, NMOSD and HC")
 ax.set_ylabel("Mean NDI per tract")
 
 # create a legend with color-coded labels
@@ -280,122 +316,161 @@ plt.show()
 
 ################################################################################
 
-####Do a t-test and visualize the data####
+#Independent samples tests
 
-# Combine the two dataframes and add a 'Disease' column to identify the two groups
-data_df = pd.concat([SM_bundles_all, NMO_bundles_all], ignore_index=True)
-data_df['Disease'] = ['MS']*len(SM_bundles_all) + ['NMOSD']*len(NMO_bundles_all)
+#Combine it all together
 
+# Check normality using Shapiro-Wilk test
+sw_test_results = []
+for bundle in SM_bundles_all.columns:
+    sm_w, sm_p = shapiro(SM_bundles_all.loc[:, bundle])
+    nmo_w, nmo_p = shapiro(NMO_bundles_all.loc[:, bundle])
+    hc_w, hc_p = shapiro(HC_bundles_all.loc[:, bundle])
+    sw_test_results.append({
+        'Bundle': bundle,
+        'SM W': sm_w,
+        'SM p-value': sm_p,
+        'NMO W': nmo_w,
+        'NMO p-value': nmo_p,
+        'HC W' : hc_w,
+        'HC p-value' : hc_p
+    })
+
+sw_test_df = pd.DataFrame(sw_test_results)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results.csv', index=False)
 
 #MS vs HC
+
+SM_bundles_all = SM_bundles_all.replace(0, np.nan)
+HC_bundles_all = HC_bundles_all.replace(0, np.nan)
+NMO_bundles_all = NMO_bundles_all.replace(0, np.nan)
 
 # Perform a t-test for each tract
 p_vals = []
 t_stats = []
+cohens_ds = []
+mean_diffs = []
+ci_lower = []
+ci_upper = []
+ratios= []
+
 for bundle in SM_bundles_all.columns:
-    t_stat, p_val = ttest_ind(SM_bundles_all.loc[:, bundle], HC_bundles_all.loc[:, bundle], equal_var=False)
+    
+    t_stat, p_val = ttest_ind(SM_bundles_all.loc[:, bundle], HC_bundles_all.loc[:, bundle], equal_var=False, nan_policy='omit')
     t_stats.append(t_stat)
     p_vals.append(p_val)
-    if p_val < 0.001:
-       p_string = '***'
-    elif p_val < 0.01:
-       p_string = '**'
-    elif p_val < 0.05:
-       p_string = '*'
-    else:
-       p_string = ''       
-
-    print(f"Bundle: {bundle}, T-value: {t_stat:.3f}, P-value: {p_val:.3f}{p_string}")
-
-
-# Correct for multiple comparisons using the FDR procedure and save results to PDF
-p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
-
-results_df = pd.DataFrame({
-    'Bundle': SM_bundles_all.columns,
-    'T-value': t_stats,
-    'P-value': p_vals,
-    'Corrected P-value': p_vals_corr
-})
-
-
-# Add asterisks to significant results
-results_df['Significance'] = ''
-results_df.loc[results_df['Corrected P-value'] < 0.001, 'Significance'] = '***'
-results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Corrected P-value'] < 0.01), 'Significance'] = '**'
-results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
-
-
-results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_HC_t_test_results.csv', index=False)
+   
+    # Calculate the confidence interval for the mean difference and cohen's d effect size
+    mean_diff = SM_bundles_all.loc[:, bundle].mean() - HC_bundles_all.loc[:, bundle].mean()
+    
+    mean_diffs.append(mean_diff)
+    
+    t_crit = t.interval(0.95, df=(len(SM_bundles_all)+len(HC_bundles_all)-2))[1]
+    
+    pooled_sd = np.sqrt(((len(SM_bundles_all)-1)*SM_bundles_all.loc[:, bundle].std()**2 + (len(HC_bundles_all)-1)*HC_bundles_all.loc[:, bundle].std()**2) / (len(SM_bundles_all) + len(HC_bundles_all) - 2))
+    
+    mean_diff_se = pooled_sd * np.sqrt(1/len(SM_bundles_all) + 1/len(HC_bundles_all))
+      
+    mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
+    mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
+    
+    ci_lower.append(mean_diff_CI_lower)
+    ci_upper.append(mean_diff_CI_upper)
+    
+    cohens_d = (SM_bundles_all.loc[:, bundle].mean() - HC_bundles_all.loc[:, bundle].mean()) / pooled_sd
+    cohens_ds.append(cohens_d)
+    
+    #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
+    ratio = SM_bundles_all.loc[:, bundle].std()/HC_bundles_all.loc[:, bundle].std()
+    
+    ratios.append(ratio)
 
 #MS vs NMOSD
 
 # Perform a t-test for each tract
-p_vals = []
-t_stats = []
 for bundle in SM_bundles_all.columns:
-    t_stat, p_val = ttest_ind(SM_bundles_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle], equal_var=False)
+    t_stat, p_val = ttest_ind(SM_bundles_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle], equal_var=False,nan_policy='omit')
     t_stats.append(t_stat)
     p_vals.append(p_val)
-    if p_val < 0.001:
-       p_string = '***'
-    elif p_val < 0.01:
-       p_string = '**'
-    elif p_val < 0.05:
-       p_string = '*'
-    else:
-       p_string = ''       
 
-    print(f"Bundle: {bundle}, T-value: {t_stat:.3f}, P-value: {p_val:.3f}{p_string}")
+    # Calculate the confidence interval for the mean difference and cohen's d effect size
+    mean_diff = SM_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()
+    
+    mean_diffs.append(mean_diff)
+    
+    t_crit = t.interval(0.95, df=(len(SM_bundles_all)+len(NMO_bundles_all)-2))[1]
+    
+    pooled_sd = np.sqrt(((len(SM_bundles_all)-1)*SM_bundles_all.loc[:, bundle].std()**2 + (len(NMO_bundles_all)-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (len(SM_bundles_all) + len(NMO_bundles_all) - 2))
+    
+    mean_diff_se = pooled_sd * np.sqrt(1/len(SM_bundles_all) + 1/len(NMO_bundles_all))
+      
+    mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
+    mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
+    
+    ci_lower.append(mean_diff_CI_lower)
+    ci_upper.append(mean_diff_CI_upper)
+    
+    cohens_d = (SM_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()) / pooled_sd
+    cohens_ds.append(cohens_d)
+    
+    #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
+    ratio = SM_bundles_all.loc[:, bundle].std()/NMO_bundles_all.loc[:, bundle].std()
+    
+    ratios.append(ratio)
 
-
-# Correct for multiple comparisons using the FDR procedure and save results to PDF
-p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
-
-results_df = pd.DataFrame({
-    'Bundle': SM_bundles_all.columns,
-    'T-value': t_stats,
-    'P-value': p_vals,
-    'Corrected P-value': p_vals_corr
-})
-
-
-# Add asterisks to significant results
-results_df['Significance'] = ''
-results_df.loc[results_df['Corrected P-value'] < 0.001, 'Significance'] = '***'
-results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Corrected P-value'] < 0.01), 'Significance'] = '**'
-results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
-
-
-results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_NMOSD_t_test_results.csv', index=False)
 
 #HC vs NMOSD
 
 # Perform a t-test for each tract
-p_vals = []
-t_stats = []
 for bundle in HC_bundles_all.columns:
-    t_stat, p_val = ttest_ind(HC_bundles_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle], equal_var=False)
+    t_stat, p_val = ttest_ind(HC_bundles_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle], equal_var=False,nan_policy='omit')
     t_stats.append(t_stat)
     p_vals.append(p_val)
-    if p_val < 0.001:
-       p_string = '***'
-    elif p_val < 0.01:
-       p_string = '**'
-    elif p_val < 0.05:
-       p_string = '*'
-    else:
-       p_string = ''       
-
-    print(f"Bundle: {bundle}, T-value: {t_stat:.3f}, P-value: {p_val:.3f}{p_string}")
+    
+    # Calculate the confidence interval for the mean difference and cohen's d effect size
+    mean_diff = HC_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()
+    
+    mean_diffs.append(mean_diff)
+    
+    t_crit = t.interval(0.95, df=(len(HC_bundles_all)+len(NMO_bundles_all)-2))[1]
+    
+    pooled_sd = np.sqrt(((len(HC_bundles_all)-1)*HC_bundles_all.loc[:, bundle].std()**2 + (len(NMO_bundles_all)-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (len(HC_bundles_all) + len(NMO_bundles_all) - 2))
+    
+    mean_diff_se = pooled_sd * np.sqrt(1/len(HC_bundles_all) + 1/len(NMO_bundles_all))
+      
+    mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
+    mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
+    
+    ci_lower.append(mean_diff_CI_lower)
+    ci_upper.append(mean_diff_CI_upper)
+    
+    cohens_d = (HC_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()) / pooled_sd
+    cohens_ds.append(cohens_d)
+    
+    #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
+    ratio = HC_bundles_all.loc[:, bundle].std()/NMO_bundles_all.loc[:, bundle].std()
+    
+    ratios.append(ratio)
 
 
 # Correct for multiple comparisons using the FDR procedure and save results to PDF
 p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
 
+# Create a list of values to assign to the "disease" column
+disease_values = ['MS vs HC']*50 + ['MS vs NMOSD']*50 + ['HC vs NMOSD']*50
+bundles_index = HC_bundles_all.columns
+bundles_concatenated_index = pd.concat([HC_bundles_all.columns.to_frame()]*3)
+bundles_concatenated_index = bundles_concatenated_index.reset_index(drop=True).squeeze()
+
 results_df = pd.DataFrame({
-    'Bundle': HC_bundles_all.columns,
+    'Comparison': disease_values,
+    'Bundle': bundles_concatenated_index,
+    'Ratio': ratios,
     'T-value': t_stats,
+    'Cohen\'s d': cohens_ds,
+    'Lower CI 95': ci_lower,
+    'Mean diff': mean_diffs,
+    'Upper CI 95': ci_upper,
     'P-value': p_vals,
     'Corrected P-value': p_vals_corr
 })
@@ -408,5 +483,199 @@ results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Correct
 results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/HC_NMOSD_t_test_results.csv', index=False)
+results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/All_groups_all_tracts_t_test_results_nosubs.csv', index=False)
+
+#########Lesioned streamlines vs NAWM streamlines
+
+##########SM############
+
+#Make all the 0 values in tracts that were not lesioned into np.nan
+SM_bundles_all = SM_bundles_all.replace(0, np.nan)
+SM_bundles_lesion_all = SM_bundles_lesion_all.replace(0, np.nan)
+
+
+# Check normality using Shapiro-Wilk test
+sw_test_results = []
+for bundle in SM_bundles_lesion_all.columns:
+    sm_w, sm_p = shapiro(SM_bundles_lesion_all.loc[:, bundle])
+    sw_test_results.append({
+        'Bundle': bundle,
+        'SM W': sm_w,
+        'SM p-value': sm_p,
+    })
+
+sw_test_df = pd.DataFrame(sw_test_results)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions.csv', index=False)
+
+#Distribution is not normal
+# Perform a mann whitney for each tract
+p_vals = []
+t_stats = []
+cohens_ds = []
+mean_diffs = []
+ci_lower = []
+ci_upper = []
+ratios= []
+
+
+for bundle in SM_bundles_lesion_all.columns:
+    t_stat, p_val = mannwhitneyu(SM_bundles_lesion_all.loc[:, bundle], SM_bundles_all.loc[:, bundle],nan_policy='omit')
+    t_stats.append(t_stat)
+    p_vals.append(p_val)
+    
+    # Calculate the confidence interval for the mean difference and cohen's d effect size
+    mean_diff = SM_bundles_lesion_all.loc[:, bundle].mean() - SM_bundles_all.loc[:, bundle].mean()
+    
+    mean_diffs.append(mean_diff)
+    
+    t_crit = t.interval(0.95, df=(len(SM_bundles_lesion_all)+len(SM_bundles_all)-2))[1]
+    
+    pooled_sd = np.sqrt(((len(SM_bundles_lesion_all)-1)*SM_bundles_lesion_all.loc[:, bundle].std()**2 + (len(SM_bundles_all)-1)*SM_bundles_all.loc[:, bundle].std()**2) / (len(SM_bundles_lesion_all) + len(SM_bundles_all) - 2))
+    
+    mean_diff_se = pooled_sd * np.sqrt(1/len(SM_bundles_lesion_all) + 1/len(SM_bundles_all))
+      
+    mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
+    mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
+    
+    ci_lower.append(mean_diff_CI_lower)
+    ci_upper.append(mean_diff_CI_upper)
+    
+    cohens_d = (SM_bundles_lesion_all.loc[:, bundle].mean() - SM_bundles_all.loc[:, bundle].mean()) / pooled_sd
+    cohens_ds.append(cohens_d)
+    
+    #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
+    ratio = SM_bundles_lesion_all.loc[:, bundle].std()/SM_bundles_all.loc[:, bundle].std()
+    
+    ratios.append(ratio)
+
+
+# Correct for multiple comparisons using the FDR procedure and save results to PDF
+p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
+
+# Create a list of values to assign to the "disease" column
+disease_values = ['lesions vs NAWM']*50
+bundles_index = SM_bundles_lesion_all.columns
+
+results_df_lesions = pd.DataFrame({
+    'Comparison': disease_values,
+    'Bundle': bundles_index,
+    'Ratio': ratios,
+    'T-value': t_stats,
+    'Cohen\'s d': cohens_ds,
+    'Lower CI 95': ci_lower,
+    'Mean diff': mean_diffs,
+    'Upper CI 95': ci_upper,
+    'P-value': p_vals,
+    'Corrected P-value': p_vals_corr
+})
+
+
+# Add asterisks to significant results
+results_df_lesions['Significance'] = ''
+results_df_lesions.loc[results_df_lesions['Corrected P-value'] < 0.001, 'Significance'] = '***'
+results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (results_df_lesions['Corrected P-value'] < 0.01), 'Significance'] = '**'
+results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
+
+
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_NAWM_vs_lesions_t_test_results.csv', index=False)
+
+##########NMO############
+
+#Make all the 0 values in tracts that were not lesioned into np.nan
+NMO_bundles_all = NMO_bundles_all.replace(0, np.nan)
+NMO_bundles_lesion_all = NMO_bundles_lesion_all.replace(0, np.nan)
+
+#For testing normality
+NMO_norm_df=NMO_bundles_lesion_all.dropna()
+
+# Check normality using Shapiro-Wilk test
+sw_test_results = []
+for bundle in NMO_bundles_lesion_all.columns:
+    nmo_w, nmo_p = shapiro(NMO_bundles_lesion_all.loc[:, bundle])
+    sw_test_results.append({
+        'Bundle': bundle,
+        'NMO W': nmo_w,
+        'NMO p-value': nmo_p,
+    })
+
+sw_test_df = pd.DataFrame(sw_test_results)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions_nmosd.csv', index=False)
+
+#Distribution is not normal
+# Perform a mann whitney for each tract
+p_vals = []
+t_stats = []
+cohens_ds = []
+mean_diffs = []
+ci_lower = []
+ci_upper = []
+ratios= []
+bundles =[]
+
+for bundle in NMO_bundles_lesion_all.columns:
+    if NMO_bundles_lesion_all.loc[:, bundle].isnull().all() or NMO_bundles_all.loc[:, bundle].isnull().all():
+        # skip empty columns
+        continue
+    else:
+        t_stat, p_val = mannwhitneyu(NMO_bundles_lesion_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle],nan_policy='omit')
+        t_stats.append(t_stat)
+        p_vals.append(p_val)
+        
+        # Calculate the confidence interval for the mean difference and cohen's d effect size
+        mean_diff = NMO_bundles_lesion_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()
+        
+        mean_diffs.append(mean_diff)
+        
+        t_crit = t.interval(0.95, df=(len(NMO_bundles_lesion_all)+len(NMO_bundles_all)-2))[1]
+        
+        pooled_sd = np.sqrt(((len(NMO_bundles_lesion_all)-1)*NMO_bundles_lesion_all.loc[:, bundle].std()**2 + (len(NMO_bundles_all)-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (len(NMO_bundles_lesion_all) + len(NMO_bundles_all) - 2))
+        
+        mean_diff_se = pooled_sd * np.sqrt(1/len(NMO_bundles_lesion_all) + 1/len(NMO_bundles_all))
+          
+        mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
+        mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
+        
+        ci_lower.append(mean_diff_CI_lower)
+        ci_upper.append(mean_diff_CI_upper)
+        
+        cohens_d = (NMO_bundles_lesion_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()) / pooled_sd
+        cohens_ds.append(cohens_d)
+        
+        #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
+        ratio = NMO_bundles_lesion_all.loc[:, bundle].std()/NMO_bundles_all.loc[:, bundle].std()
+        
+        ratios.append(ratio)
+        
+        bundles.append(bundle)
+
+
+# Correct for multiple comparisons using the FDR procedure and save results to PDF
+p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
+
+# Create a list of values to assign to the "disease" column
+disease_values = ['lesions vs NAWM']*len(bundles)
+
+results_df_lesions = pd.DataFrame({
+    'Comparison': disease_values,
+    'Bundle': bundles,
+    'Ratio': ratios,
+    'T-value': t_stats,
+    'Cohen\'s d': cohens_ds,
+    'Lower CI 95': ci_lower,
+    'Mean diff': mean_diffs,
+    'Upper CI 95': ci_upper,
+    'P-value': p_vals,
+    'Corrected P-value': p_vals_corr
+})
+
+
+# Add asterisks to significant results
+results_df_lesions['Significance'] = ''
+results_df_lesions.loc[results_df_lesions['Corrected P-value'] < 0.001, 'Significance'] = '***'
+results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (results_df_lesions['Corrected P-value'] < 0.01), 'Significance'] = '**'
+results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
+
+
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results.csv', index=False)
+
 
