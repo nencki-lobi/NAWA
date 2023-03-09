@@ -17,8 +17,18 @@ import statsmodels.stats.multitest as smm
 from scipy.stats import mannwhitneyu
 from math import sqrt
 from scipy.stats import ttest_rel
+from scipy.stats import wilcoxon
 
 np.set_printoptions(precision=8, suppress=True, formatter={'float': '{: 0.8e}'.format})
+
+path_to_write='/Volumes/pjakuszyk/seropositive_project/'
+# Set the folder name
+folder_name = 'figures/'
+
+# Create the folder if it doesn't exist
+if not os.path.exists(path_to_write+folder_name):
+    os.makedirs(path_to_write+folder_name)
+
 
 
 SM_patients =[
@@ -56,6 +66,37 @@ for SM_patient in SM_patients:
     # read participant's csv file into a dataframe
     df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
     df_l = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
+    
+    #####Lesioned WM######
+    # Create a figure with 50 subplots
+    fig, axes = plt.subplots(nrows=10, ncols=5, figsize=(60, 50))
+    
+    # Loop through each column of the data and plot it on a separate subplot
+    for i, col in enumerate(df_l.columns):
+        # Select the data for the current column
+        column_data = df_l[col]
+        
+        # Calculate the row and column indices for the current subplot
+        row_idx = i // 5
+        col_idx = i % 5
+        
+        # Plot the data on the current subplot
+        axes[row_idx, col_idx].plot(column_data)
+        
+        # Set the title for the current subplot
+        axes[row_idx, col_idx].set_title(col)
+    
+    # Set the overall title for the figure
+    fig.suptitle(f'MS {SM_patient} data for 50 lesioned Tracts')
+    
+    # Adjust the spacing between the subplots
+    fig.subplots_adjust(wspace=0.25, hspace=1.2)
+    
+    fig.savefig(os.path.join(path_to_write+folder_name, f"MS_lesioned_tracts_{SM_patient}.png"))
+    
+    # Close the figure window without displaying the figure
+    plt.close()
+    ####################
 
     # make a mean out of the 100 points sampled per tract 
     df = df.mean().to_frame().reset_index()
@@ -133,6 +174,37 @@ for NMO_patient in NMO_patients:
     # read participant's csv file into a dataframe
     df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
     df_l = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
+
+    #####Lesioned WM######
+    # Create a figure with 50 subplots
+    fig, axes = plt.subplots(nrows=10, ncols=5, figsize=(60, 50))
+    
+    # Loop through each column of the data and plot it on a separate subplot
+    for i, col in enumerate(df_l.columns):
+        # Select the data for the current column
+        column_data = df_l[col]
+        
+        # Calculate the row and column indices for the current subplot
+        row_idx = i // 5
+        col_idx = i % 5
+        
+        # Plot the data on the current subplot
+        axes[row_idx, col_idx].plot(column_data)
+        
+        # Set the title for the current subplot
+        axes[row_idx, col_idx].set_title(col)
+    
+    # Set the overall title for the figure
+    fig.suptitle(f'NMOSD {NMO_patient} data for 50 lesioned Tracts')
+    
+    # Adjust the spacing between the subplots
+    fig.subplots_adjust(wspace=0.25, hspace=1.2)
+    
+    fig.savefig(os.path.join(path_to_write+folder_name, f"NMOSD_lesioned_tracts_{NMO_patient}.png"))
+    
+    # Close the figure window without displaying the figure
+    plt.close()
+    ####################        
 
     # make a mean out of the 100 points sampled per tract 
     df = df.mean().to_frame().reset_index()
@@ -318,6 +390,33 @@ plt.show()
 
 #Independent samples tests
 
+# Change all the zeros produced by insufficient streamlines to NaN values
+SM_bundles_all = SM_bundles_all.replace(0, np.nan)
+HC_bundles_all = HC_bundles_all.replace(0, np.nan)
+NMO_bundles_all = NMO_bundles_all.replace(0, np.nan)
+
+
+# Calculate n for every group and tract
+n_sample_sm = []
+n_sample_nmo = []
+n_sample_hc = []
+
+
+for bundle in SM_bundles_all.columns:
+    
+    n_sm = SM_bundles_all.loc[:, bundle].notna().sum()
+    n_sample_sm.append(n_sm)
+    
+for bundle in NMO_bundles_all.columns:
+    
+    n_nmo = NMO_bundles_all.loc[:, bundle].notna().sum()
+    n_sample_nmo.append(n_nmo)
+
+for bundle in HC_bundles_all.columns:
+    
+    n_hc= HC_bundles_all.loc[:, bundle].notna().sum()
+    n_sample_hc.append(n_hc)
+
 #Combine it all together
 
 # Check normality using Shapiro-Wilk test
@@ -341,10 +440,6 @@ sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_res
 
 #MS vs HC
 
-SM_bundles_all = SM_bundles_all.replace(0, np.nan)
-HC_bundles_all = HC_bundles_all.replace(0, np.nan)
-NMO_bundles_all = NMO_bundles_all.replace(0, np.nan)
-
 # Perform a t-test for each tract
 p_vals = []
 t_stats = []
@@ -354,6 +449,7 @@ ci_lower = []
 ci_upper = []
 ratios= []
 
+
 for bundle in SM_bundles_all.columns:
     
     t_stat, p_val = ttest_ind(SM_bundles_all.loc[:, bundle], HC_bundles_all.loc[:, bundle], equal_var=False, nan_policy='omit')
@@ -361,15 +457,18 @@ for bundle in SM_bundles_all.columns:
     p_vals.append(p_val)
    
     # Calculate the confidence interval for the mean difference and cohen's d effect size
+    n_sm = SM_bundles_all.loc[:, bundle].notna().sum()
+    n_hc= HC_bundles_all.loc[:, bundle].notna().sum() 
+    
     mean_diff = SM_bundles_all.loc[:, bundle].mean() - HC_bundles_all.loc[:, bundle].mean()
     
     mean_diffs.append(mean_diff)
     
-    t_crit = t.interval(0.95, df=(len(SM_bundles_all)+len(HC_bundles_all)-2))[1]
+    t_crit = t.interval(0.95, df=(n_sm+n_hc-2))[1]
     
-    pooled_sd = np.sqrt(((len(SM_bundles_all)-1)*SM_bundles_all.loc[:, bundle].std()**2 + (len(HC_bundles_all)-1)*HC_bundles_all.loc[:, bundle].std()**2) / (len(SM_bundles_all) + len(HC_bundles_all) - 2))
+    pooled_sd = np.sqrt(((n_sm-1)*SM_bundles_all.loc[:, bundle].std()**2 + (n_hc-1)*HC_bundles_all.loc[:, bundle].std()**2) / (n_sm + n_hc - 2))
     
-    mean_diff_se = pooled_sd * np.sqrt(1/len(SM_bundles_all) + 1/len(HC_bundles_all))
+    mean_diff_se = pooled_sd * np.sqrt(1/n_sm + 1/n_hc)
       
     mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
     mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
@@ -394,15 +493,18 @@ for bundle in SM_bundles_all.columns:
     p_vals.append(p_val)
 
     # Calculate the confidence interval for the mean difference and cohen's d effect size
+    n_sm = SM_bundles_all.loc[:, bundle].notna().sum()
+    n_nmo= NMO_bundles_all.loc[:, bundle].notna().sum() 
+    
     mean_diff = SM_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()
     
     mean_diffs.append(mean_diff)
     
-    t_crit = t.interval(0.95, df=(len(SM_bundles_all)+len(NMO_bundles_all)-2))[1]
+    t_crit = t.interval(0.95, df=(n_sm+n_nmo-2))[1]
     
-    pooled_sd = np.sqrt(((len(SM_bundles_all)-1)*SM_bundles_all.loc[:, bundle].std()**2 + (len(NMO_bundles_all)-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (len(SM_bundles_all) + len(NMO_bundles_all) - 2))
+    pooled_sd = np.sqrt(((n_sm-1)*SM_bundles_all.loc[:, bundle].std()**2 + (n_nmo-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (n_sm + n_nmo - 2))
     
-    mean_diff_se = pooled_sd * np.sqrt(1/len(SM_bundles_all) + 1/len(NMO_bundles_all))
+    mean_diff_se = pooled_sd * np.sqrt(1/n_sm + 1/n_nmo)
       
     mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
     mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
@@ -428,15 +530,18 @@ for bundle in HC_bundles_all.columns:
     p_vals.append(p_val)
     
     # Calculate the confidence interval for the mean difference and cohen's d effect size
+    n_hc = HC_bundles_all.loc[:, bundle].notna().sum()
+    n_nmo= NMO_bundles_all.loc[:, bundle].notna().sum() 
+    
     mean_diff = HC_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()
     
     mean_diffs.append(mean_diff)
     
-    t_crit = t.interval(0.95, df=(len(HC_bundles_all)+len(NMO_bundles_all)-2))[1]
+    t_crit = t.interval(0.95, df=(n_hc+n_nmo-2))[1]
     
-    pooled_sd = np.sqrt(((len(HC_bundles_all)-1)*HC_bundles_all.loc[:, bundle].std()**2 + (len(NMO_bundles_all)-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (len(HC_bundles_all) + len(NMO_bundles_all) - 2))
+    pooled_sd = np.sqrt(((n_hc-1)*HC_bundles_all.loc[:, bundle].std()**2 + (n_nmo-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (n_hc + n_nmo - 2))
     
-    mean_diff_se = pooled_sd * np.sqrt(1/len(HC_bundles_all) + 1/len(NMO_bundles_all))
+    mean_diff_se = pooled_sd * np.sqrt(1/n_hc + 1/n_nmo)
       
     mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
     mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
@@ -462,9 +567,18 @@ bundles_index = HC_bundles_all.columns
 bundles_concatenated_index = pd.concat([HC_bundles_all.columns.to_frame()]*3)
 bundles_concatenated_index = bundles_concatenated_index.reset_index(drop=True).squeeze()
 
+# Insert n value for every group and tract in the right place
+number_sm = n_sample_sm+n_sample_sm+['']*50
+number_nmo = ['']*50 + n_sample_nmo + n_sample_nmo
+number_hc = n_sample_hc+['']*50+n_sample_hc
+
+
 results_df = pd.DataFrame({
     'Comparison': disease_values,
     'Bundle': bundles_concatenated_index,
+    'n SM':number_sm,
+    'n NMO':number_nmo,
+    'n HC':number_hc,
     'Ratio': ratios,
     'T-value': t_stats,
     'Cohen\'s d': cohens_ds,
@@ -497,12 +611,16 @@ SM_bundles_lesion_all = SM_bundles_lesion_all.replace(0, np.nan)
 # Check normality using Shapiro-Wilk test
 sw_test_results = []
 for bundle in SM_bundles_lesion_all.columns:
-    sm_w, sm_p = shapiro(SM_bundles_lesion_all.loc[:, bundle])
+    # Drop NaN values from the data
+    data = SM_bundles_lesion_all.loc[:, bundle].dropna()
+    # Run the Shapiro-Wilk test on the cleaned data
+    sm_w, sm_p = shapiro(data)
     sw_test_results.append({
         'Bundle': bundle,
         'SM W': sm_w,
         'SM p-value': sm_p,
     })
+
 
 sw_test_df = pd.DataFrame(sw_test_results)
 sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions.csv', index=False)
@@ -515,24 +633,33 @@ cohens_ds = []
 mean_diffs = []
 ci_lower = []
 ci_upper = []
-ratios= []
-
+ratios = []
+n_sample = []
 
 for bundle in SM_bundles_lesion_all.columns:
-    t_stat, p_val = mannwhitneyu(SM_bundles_lesion_all.loc[:, bundle], SM_bundles_all.loc[:, bundle],nan_policy='omit')
-    t_stats.append(t_stat)
+    _, p_val = wilcoxon(SM_bundles_lesion_all.loc[:, bundle], SM_bundles_all.loc[:, bundle],nan_policy='omit', zero_method='wilcox')
+    t_stats.append(None) # Wilcoxon test doesn't have a test statistic
     p_vals.append(p_val)
     
     # Calculate the confidence interval for the mean difference and cohen's d effect size
-    mean_diff = SM_bundles_lesion_all.loc[:, bundle].mean() - SM_bundles_all.loc[:, bundle].mean()
+    
+    # For proper df calculation define the number of non nan entries in the bundle with lesions
+    
+    n = (SM_bundles_lesion_all.loc[:, bundle] - SM_bundles_all.loc[:, bundle]).notna().sum()
+    
+    n_sample.append(n)
+    
+    diff = SM_bundles_lesion_all.loc[:, bundle] - SM_bundles_all.loc[:, bundle]
+        
+    mean_diff=diff.mean()
+    
+    sd_diff=diff.std()
     
     mean_diffs.append(mean_diff)
     
-    t_crit = t.interval(0.95, df=(len(SM_bundles_lesion_all)+len(SM_bundles_all)-2))[1]
-    
-    pooled_sd = np.sqrt(((len(SM_bundles_lesion_all)-1)*SM_bundles_lesion_all.loc[:, bundle].std()**2 + (len(SM_bundles_all)-1)*SM_bundles_all.loc[:, bundle].std()**2) / (len(SM_bundles_lesion_all) + len(SM_bundles_all) - 2))
-    
-    mean_diff_se = pooled_sd * np.sqrt(1/len(SM_bundles_lesion_all) + 1/len(SM_bundles_all))
+    t_crit = t.interval(0.95, df=(n-1))[1]
+        
+    mean_diff_se = sd_diff / np.sqrt(n)
       
     mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
     mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
@@ -540,7 +667,7 @@ for bundle in SM_bundles_lesion_all.columns:
     ci_lower.append(mean_diff_CI_lower)
     ci_upper.append(mean_diff_CI_upper)
     
-    cohens_d = (SM_bundles_lesion_all.loc[:, bundle].mean() - SM_bundles_all.loc[:, bundle].mean()) / pooled_sd
+    cohens_d = mean_diff / sd_diff
     cohens_ds.append(cohens_d)
     
     #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
@@ -558,6 +685,7 @@ bundles_index = SM_bundles_lesion_all.columns
 
 results_df_lesions = pd.DataFrame({
     'Comparison': disease_values,
+    'n': n_sample,
     'Bundle': bundles_index,
     'Ratio': ratios,
     'T-value': t_stats,
@@ -591,11 +719,14 @@ NMO_norm_df=NMO_bundles_lesion_all.dropna()
 # Check normality using Shapiro-Wilk test
 sw_test_results = []
 for bundle in NMO_bundles_lesion_all.columns:
-    nmo_w, nmo_p = shapiro(NMO_bundles_lesion_all.loc[:, bundle])
+    # Drop NaN values from the data
+    data = SM_bundles_lesion_all.loc[:, bundle].dropna()
+    # Run the Shapiro-Wilk test on the cleaned data
+    sm_w, sm_p = shapiro(data)
     sw_test_results.append({
         'Bundle': bundle,
-        'NMO W': nmo_w,
-        'NMO p-value': nmo_p,
+        'SM W': sm_w,
+        'SM p-value': sm_p,
     })
 
 sw_test_df = pd.DataFrame(sw_test_results)
@@ -611,26 +742,34 @@ ci_lower = []
 ci_upper = []
 ratios= []
 bundles =[]
+n_sample = []
 
 for bundle in NMO_bundles_lesion_all.columns:
     if NMO_bundles_lesion_all.loc[:, bundle].isnull().all() or NMO_bundles_all.loc[:, bundle].isnull().all():
         # skip empty columns
         continue
     else:
-        t_stat, p_val = mannwhitneyu(NMO_bundles_lesion_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle],nan_policy='omit')
-        t_stats.append(t_stat)
+        _, p_val = wilcoxon(NMO_bundles_lesion_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle],nan_policy='omit', zero_method='wilcox')
+        t_stats.append(None) # Wilcoxon test doesn't have a test statistic
         p_vals.append(p_val)
         
-        # Calculate the confidence interval for the mean difference and cohen's d effect size
-        mean_diff = NMO_bundles_lesion_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()
-        
+        # For proper df calculation define the number of non nan entries in the bundle with lesions
+       
+        n = (NMO_bundles_lesion_all.loc[:, bundle] - NMO_bundles_all.loc[:, bundle]).notna().sum()
+       
+        n_sample.append(n)
+       
+        diff = NMO_bundles_lesion_all.loc[:, bundle] - NMO_bundles_all.loc[:, bundle]
+       
+        mean_diff=diff.mean()
+       
+        sd_diff=diff.std()
+       
         mean_diffs.append(mean_diff)
-        
-        t_crit = t.interval(0.95, df=(len(NMO_bundles_lesion_all)+len(NMO_bundles_all)-2))[1]
-        
-        pooled_sd = np.sqrt(((len(NMO_bundles_lesion_all)-1)*NMO_bundles_lesion_all.loc[:, bundle].std()**2 + (len(NMO_bundles_all)-1)*NMO_bundles_all.loc[:, bundle].std()**2) / (len(NMO_bundles_lesion_all) + len(NMO_bundles_all) - 2))
-        
-        mean_diff_se = pooled_sd * np.sqrt(1/len(NMO_bundles_lesion_all) + 1/len(NMO_bundles_all))
+       
+        t_crit = t.interval(0.95, df=(n-1))[1]
+           
+        mean_diff_se = sd_diff / np.sqrt(n)
           
         mean_diff_CI_lower = mean_diff - t_crit * mean_diff_se
         mean_diff_CI_upper = mean_diff + t_crit * mean_diff_se
@@ -638,7 +777,7 @@ for bundle in NMO_bundles_lesion_all.columns:
         ci_lower.append(mean_diff_CI_lower)
         ci_upper.append(mean_diff_CI_upper)
         
-        cohens_d = (NMO_bundles_lesion_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()) / pooled_sd
+        cohens_d = mean_diff / sd_diff
         cohens_ds.append(cohens_d)
         
         #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
@@ -657,6 +796,7 @@ disease_values = ['lesions vs NAWM']*len(bundles)
 
 results_df_lesions = pd.DataFrame({
     'Comparison': disease_values,
+    'n':n_sample,
     'Bundle': bundles,
     'Ratio': ratios,
     'T-value': t_stats,
