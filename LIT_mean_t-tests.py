@@ -1768,9 +1768,17 @@ for i, tract in enumerate(tracts):
     group1_values = HC_bundles_NAWM_reduced[tract].dropna().values
     group2_values = NMO_bundles_NAWM_reduced[tract].dropna().values
     group3_values = SM_bundles_NAWM_reduced[tract].dropna().values
-    
+        
     # Plot a boxplot for the current tract in each subplot
-    axs[i].boxplot([group1_values, group2_values, group3_values])
+    box = axs[i].boxplot([group1_values, group2_values, group3_values], patch_artist=True, showmeans=True, meanline=True)
+    # Define the colors for each group
+    colors = ['beige','azure','lavender']
+    
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
+        
+    #add horizontal grid lines
+    axs[i].yaxis.grid(True)    
     axs[i].set_title(tract)
     axs[i].set_xticklabels(['HC', 'NMO', 'MS'])
 
@@ -1782,6 +1790,8 @@ fig.tight_layout()
 
 # Show the plot
 plt.show()
+
+
 
 #####lesions######
 # Create a list of the 21 tracts
@@ -1800,7 +1810,15 @@ for i, tract in enumerate(tracts):
     group2_values = SM_bundles_lesions_reduced[tract].dropna().values
     
     # Plot a boxplot for the current tract in each subplot
-    axs[i].boxplot([group1_values, group2_values])
+    box = axs[i].boxplot([group1_values, group2_values], patch_artist=True, showmeans=True, meanline=True)
+    # Define the colors for each group
+    colors = ['azure','lavender']
+    
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
+        
+    #add horizontal grid lines
+    axs[i].yaxis.grid(True)    
     axs[i].set_title(tract)
     axs[i].set_xticklabels(['NMO', 'MS'])
 
@@ -1826,7 +1844,15 @@ data = [HC_bundles_NAWM_total['NAWM_total'].dropna().values,
 fig, ax = plt.subplots()
 
 # Create the boxplot
-ax.boxplot(data)
+box = ax.boxplot(data, patch_artist=True, showmeans=True, meanline=True)
+# Define the colors for each group
+colors = ['beige','azure','lavender']
+
+for patch, color in zip(box['boxes'], colors):
+    patch.set_facecolor(color)
+
+#add horizontal grid lines
+ax.yaxis.grid(True)   
 
 # Set the x-axis tick labels
 ax.set_xticklabels(['HC', 'NMO', 'MS'])
@@ -1847,7 +1873,16 @@ data = [NMO_bundles_lesions_total['lesions_total'].dropna().values,
 fig, ax = plt.subplots()
 
 # Create the boxplot
-ax.boxplot(data)
+box = ax.boxplot(data, patch_artist=True, showmeans=True, meanline=True)
+
+# Define the colors for each group
+colors = ['azure','lavender']
+
+for patch, color in zip(box['boxes'], colors):
+    patch.set_facecolor(color)
+
+#add horizontal grid lines
+ax.yaxis.grid(True)   
 
 # Set the x-axis tick labels
 ax.set_xticklabels(['NMO', 'MS'])
@@ -1859,7 +1894,7 @@ ax.set_ylabel('NDI')
 # Show the plot
 plt.show()
 
-#####lesions######
+#####Everything######
 # Combine the dataframes into a list
 data = [
         HC_bundles_NAWM_total['NAWM_total'].dropna().values,
@@ -1873,7 +1908,16 @@ data = [
 fig, ax = plt.subplots()
 
 # Create the boxplot
-ax.boxplot(data)
+box = ax.boxplot(data, patch_artist=True, showmeans=True, meanline=True)
+
+# Define the colors for each group
+colors = ['beige','azure','lavender','azure','lavender']
+
+for patch, color in zip(box['boxes'], colors):
+    patch.set_facecolor(color)
+
+#add horizontal grid lines
+ax.yaxis.grid(True)   
 
 # Set the x-axis tick labels
 ax.set_xticklabels(['HC_NAWM','NMO_NAWM', 'MS_NAWM', 'NMO_lesions','HC_lesions'])
