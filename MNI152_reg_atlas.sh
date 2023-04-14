@@ -24,7 +24,6 @@
 
 #Good luck Jesper
 
-
 participantdir=$1
 
 cd $participantdir
@@ -37,7 +36,7 @@ echo "Processing participant: $participant"
 
 cd Brain/T1
 
-: '
+
 if [ -e ../FLAIR/FLAIR_lesion_mask.nii.gz ]
 then
 
@@ -80,7 +79,28 @@ fslmaths $FSLDIR/data/atlases/JHU/JHU-ICBM-labels-2mm.nii.gz -thr 3 -uthr 5 Corp
 fslmaths $FSLDIR/data/atlases/JHU/JHU-ICBM-labels-2mm.nii.gz -thr 7 -uthr 8 Cortico_Spinal_Tract.nii.gz
 fslmaths $FSLDIR/data/atlases/JHU/JHU-ICBM-labels-2mm.nii.gz -thr 29 -uthr 30 Optic_Radiation.nii.gz
 
+#Binarise the masks:
+fslmaths Corpus_Callosum.nii.gz -thr 0 -bin Corpus_Callosum.nii.gz
+fslmaths Cortico_Spinal_Tract.nii.gz -thr 0 -bin Cortico_Spinal_Tract.nii.gz
+fslmaths Optic_Radiation.nii.gz -thr 0 -bin Optic_Radiation.nii.gz
 
+#Warp ROis to T1 - only if you have to for nice pictures, it is not necessary for this script to run an generally it will save space
+: '
+if [ -e ../FLAIR/FLAIR_lesion_mask.nii.gz ]
+then
+
+  applywarp --ref=T1_filled_fixed.nii.gz --in=Corpus_Callosum.nii.gz --warp=MNItoT1_warp --out=Corpus_Callosum_in_T1.nii.gz --interp=nn
+  applywarp --ref=T1_filled_fixed.nii.gz --in=Cortico_Spinal_Tract.nii.gz --warp=MNItoT1_warp --out=Cortico_Spinal_Tract_in_T1.nii.gz --interp=nn
+  applywarp --ref=T1_filled_fixed.nii.gz --in=Optic_Radiation.nii.gz --warp=MNItoT1_warp --out=Optic_Radiation_in_T1.nii.gz --interp=nn
+
+else
+
+  applywarp --ref=T1.nii.gz --in=Corpus_Callosum.nii.gz --warp=MNItoT1_warp --out=Corpus_Callosum_in_T1.nii.gz --interp=nn
+  applywarp --ref=T1.nii.gz --in=Cortico_Spinal_Tract.nii.gz --warp=MNItoT1_warp --out=Cortico_Spinal_Tract_in_T1.nii.gz --interp=nn
+  applywarp --ref=T1.nii.gz --in=Optic_Radiation.nii.gz --warp=MNItoT1_warp --out=Optic_Radiation_in_T1.nii.gz --interp=nn
+
+fi
+'
 #You need to have the linear transformation matrices from T1 do desired space in order for the rest to work e.g. T1_to_b0.mat
 #These two (T1_to_b0.mat and MNItoT1_warp) can now be used to bring the selected tracts into DWI and MWF space with the command
 applywarp -r ../DWI/mean_b0.nii.gz -i Corpus_Callosum.nii.gz -w MNItoT1_warp.nii.gz --postmat=T1_to_b0.mat -o ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz
@@ -91,7 +111,7 @@ applywarp -r ../MWF/vista_bet.nii.gz -i Corpus_Callosum.nii.gz -w MNItoT1_warp.n
 applywarp -r ../MWF/vista_bet.nii.gz -i Cortico_Spinal_Tract.nii.gz -w MNItoT1_warp.nii.gz --postmat=T1_to_MWF.mat -o ../MWF/JHU_Cortico_Spinal_Tract_in_MWF.nii.gz
 applywarp -r ../MWF/vista_bet.nii.gz -i Optic_Radiation.nii.gz -w MNItoT1_warp.nii.gz --postmat=T1_to_MWF.mat -o ../MWF/JHU_Optic_Radiation_in_MWF.nii.gz
 
-'
+
 
 #Binarise the masks:
 fslmaths ../DWI/JHU_Corpus_Callosum_in_b0.nii.gz -thr 0.9 -bin ../DWI/JHU_Corpus_Callosum_in_b0_bin.nii.gz

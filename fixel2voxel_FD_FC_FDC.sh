@@ -13,7 +13,7 @@ echo "Processing participant: $participant"
 
 #Specify directories
 
-tempdir=/home/pjakuszyk/seropositive_project/template
+tempdir=/home/pjakuszyk/seropositive_project/template_random
 
 FLAIRdir=$participantdir/Brain/FLAIR
 

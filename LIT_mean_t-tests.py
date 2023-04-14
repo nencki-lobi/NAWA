@@ -18,12 +18,11 @@ from scipy.stats import mannwhitneyu
 from math import sqrt
 from scipy.stats import ttest_rel
 from scipy.stats import wilcoxon
-import ptitprince as pt
 
 # Set float_format to display up to 3 decimal places
 pd.options.display.float_format = '{:.3f}'.format
 
-path_to_write='/Volumes/ms/seropositive_project/'
+path_to_write='/Volumes/pjakuszyk/seropositive_project/'
 # Set the folder name
 folder_name = 'figures/'
 
@@ -43,6 +42,7 @@ SM_patients =[
 'NAWA_066',
 'NAWA_052',
 'Nawa_058',
+'NAWA_049',
 'NAWA_054',
 'NAWA_047',
 'NAWA_008',
@@ -52,8 +52,7 @@ SM_patients =[
 'NAWA_023',
 'NAWA_063',
 'NAWA_062',
-'NAWA_065',
-'NAWA_049'
+'NAWA_065'
 ]
       
 
@@ -63,19 +62,11 @@ SM_bundles_long = []
 
 SM_bundles_lesion = []
 SM_bundles_lesion_long = []
-
-SM_bundles_l_pair = []
-SM_bundles_l_pair_long = []
-
-SM_bundles_l_focal = []
-SM_bundles_l_focal_long = []
 # loop through each participant
 for SM_patient in SM_patients:
     # read participant's csv file into a dataframe
-    df = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
-    df_l = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
-    df_l_id = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_lesion_identification.csv", sep=';')
-    df_l_id_copy = df_l_id.copy()
+    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
+    df_l = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
     '''    
     #####Lesioned WM######
     # Create a figure with 50 subplots
@@ -108,46 +99,17 @@ for SM_patient in SM_patients:
     plt.close()
     ####################
     '''
-    
-    #Using the lesion identification file based on the lesion mask exclude lesioned NDI values from the lesion dependent tractometry
-    #convert lesioned wm to nan values
-    true_false = df_l_id[df_l_id <= 0.2].notna()
-    #select parts of the df that do no the nan values
-    lesions_nan = df_l_id[df_l_id >= 0.2] = np.nan
-    #replace non lesioned 0 values with real NDI values
-    df_lesion = df_l.where(true_false,df_l_id)
-  
-    ###make a lesion independent df for comaprison with exactly the same segments
-    #replace non lesioned 0 values with real NDI values
-    df_l_pair = df.where(true_false,df_l_id)
-    
-    ##create parts of tracts that only contain lesions
-    #convert lesioned wm to nan values
-    true_false = df_l_id_copy[df_l_id_copy > 0.2].notna()
-    #select parts of the df that do no the nan values
-    lesions_nan = df_l_id_copy[df_l_id_copy < 0.2] = np.nan
-    #replace non lesioned 0 values with real NDI values
-    df_l_focal = df_l.where(true_false,df_l_id_copy)
- 
     # make a mean out of the 100 points sampled per tract 
     df = df.mean().to_frame().reset_index()
-    df_l = df_lesion.mean().to_frame().reset_index()
-    df_l_pair = df_l_pair.mean().to_frame().reset_index()
-    df_l_focal = df_l_focal.mean().to_frame().reset_index()
+    df_l = df_l.mean().to_frame().reset_index()
  
-    
     # add participant id column to the dataframe
     df['Participant'] = SM_patient
     df_l['Participant'] = SM_patient
-    df_l_pair['Participant'] = SM_patient
-    df_l_focal['Participant'] = SM_patient
 
     # bring it from long to wide format
     df_pivot = df.pivot(index='Participant', columns='index', values=0)
-    df_pivot_lesion = df_l.pivot(index='Participant', columns='index', values=0)   
-    df_pivot_l_pair = df_l_pair.pivot(index='Participant', columns='index', values=0)
-    df_pivot_l_focal = df_l_focal.pivot(index='Participant', columns='index', values=0)
-
+    df_pivot_lesion = df_l.pivot(index='Participant', columns='index', values=0)
 
     # append participant's data to the list
     SM_bundles.append(df_pivot)
@@ -156,11 +118,7 @@ for SM_patient in SM_patients:
     SM_bundles_lesion.append(df_pivot_lesion)
     SM_bundles_lesion_long.append(df_l)
     
-    SM_bundles_l_pair.append(df_pivot_l_pair)
-    SM_bundles_l_pair_long.append(df_l_pair)
     
-    SM_bundles_l_focal.append(df_pivot_l_focal)
-    SM_bundles_l_focal_long.append(df_l_focal)
 
 # concatenate all participant's data into a single dataframe
 SM_bundles_all = pd.concat(SM_bundles)
@@ -169,17 +127,9 @@ SM_bundles_long = pd.concat(SM_bundles_long)
 SM_bundles_lesion_all = pd.concat(SM_bundles_lesion)
 SM_bundles_lesion_long = pd.concat(SM_bundles_lesion_long)
 
-SM_bundles_l_pair_all = pd.concat(SM_bundles_l_pair)
-SM_bundles_l_pair_long = pd.concat(SM_bundles_l_pair_long)
-
-SM_bundles_l_focal_all = pd.concat(SM_bundles_l_focal)
-SM_bundles_l_focal_long = pd.concat(SM_bundles_l_focal_long)
 
 SM_bundles_all = SM_bundles_all.replace(0, np.nan)
 SM_bundles_lesion_all = SM_bundles_lesion_all.replace(0, np.nan)
-SM_bundles_l_pair_all = SM_bundles_l_pair_all.replace(0, np.nan)
-SM_bundles_l_focal_all = SM_bundles_l_focal_all.replace(0, np.nan)
-
 
 
 ####Further reduce the number of tracts combine left-right anc CC######
@@ -219,57 +169,18 @@ for basename in slf_basenames:
 # compute mean of all columns and create a new column with that mean value for each row
 SM_bundles_lesions_total = SM_bundles_lesion_all.mean(axis=1).to_frame(name='lesions_total')
 
-##NAWM pair for lesions
-# create a new DataFrame with mean values of each tract
-basename = SM_bundles_l_pair_all.columns.str.rsplit('_', n=1).str[0]
-SM_bundles_l_pair_reduced = SM_bundles_l_pair_all.groupby(basename, axis=1).mean()
-
-# handle special cases of SLF tracts
-slf_cols = SM_bundles_l_pair_reduced.columns.str.startswith('SLF_')
-slf_basenames = SM_bundles_l_pair_reduced.columns[slf_cols].str.rsplit('_', n=1).str[0].unique()
-
-for basename in slf_basenames:
-    slf_mean = SM_bundles_l_pair_reduced.filter(regex=f'{basename}_').mean(axis=1)
-    SM_bundles_l_pair_reduced = SM_bundles_l_pair_reduced.drop(columns=SM_bundles_l_pair_reduced.filter(regex=f'{basename}_').columns)
-    SM_bundles_l_pair_reduced[basename] = slf_mean
-
-# compute mean of all columns and create a new column with that mean value for each row
-SM_bundles_l_pair_total = SM_bundles_l_pair_all.mean(axis=1).to_frame(name='l_pair_total')
-
-##focal lesions
-# create a new DataFrame with mean values of each tract
-basename = SM_bundles_l_focal_all.columns.str.rsplit('_', n=1).str[0]
-SM_bundles_l_focal_reduced = SM_bundles_l_focal_all.groupby(basename, axis=1).mean()
-
-# handle special cases of SLF tracts
-slf_cols = SM_bundles_l_focal_reduced.columns.str.startswith('SLF_')
-slf_basenames = SM_bundles_l_focal_reduced.columns[slf_cols].str.rsplit('_', n=1).str[0].unique()
-
-for basename in slf_basenames:
-    slf_mean = SM_bundles_l_focal_reduced.filter(regex=f'{basename}_').mean(axis=1)
-    SM_bundles_l_focal_reduced = SM_bundles_l_focal_reduced.drop(columns=SM_bundles_l_focal_reduced.filter(regex=f'{basename}_').columns)
-    SM_bundles_l_focal_reduced[basename] = slf_mean
-
-# compute mean of all columns and create a new column with that mean value for each row
-SM_bundles_l_focal_total = SM_bundles_l_focal_all.mean(axis=1).to_frame(name='l_pair_total')
-
-
 
 # save the result to a new csv file
-SM_bundles_all.to_csv('/Volumes/ms/seropositive_project/SM_tracts_mean_NDI_nosubst.csv', index=True)
-SM_bundles_lesion_all.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_lesions.csv', index=True)
+SM_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_mean_NDI_nosubst.csv', index=True)
+SM_bundles_lesion_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_NDI_lesions.csv', index=True)
 
-SM_bundles_NAWM_reduced.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_NAWM_reduced.csv', index=True)
-SM_bundles_lesions_reduced.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_lesions_reduced.csv', index=True)
+SM_bundles_NAWM_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_NDI_NAWM_reduced.csv', index=True)
+SM_bundles_lesions_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_NDI_lesions_reduced.csv', index=True)
 
-SM_bundles_NAWM_total.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_NAWM_total.csv', index=True)
-SM_bundles_lesions_total.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_lesions_total.csv', index=True)
+SM_bundles_NAWM_total.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_NDI_NAWM_total.csv', index=True)
+SM_bundles_lesions_total.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_tracts_NDI_lesions_total.csv', index=True)
 
-SM_bundles_l_pair_reduced.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_l_pair_reduced.csv', index=True)
-SM_bundles_l_pair_total.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_l_pair_total.csv', index=True)
 
-SM_bundles_l_focal_reduced.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_l_focal_reduced.csv', index=True)
-SM_bundles_l_focal_total.to_csv('/Volumes/ms/seropositive_project/SM_tracts_NDI_l_focal_total.csv', index=True)
 
 '''
 #Plot the avergae bundle load
@@ -300,9 +211,9 @@ NMO_patients =[
 'NAWA_051',
 'NAWA_011',
 'NAWA_021',
-'NAWA_037', # no brain lesions
-'NAWA_040', # no brain lesions
-'Nawa_042', # no brain lesions
+'NAWA_037',
+'NAWA_040',
+'Nawa_042',
 'NAWA_036'
 ]
 
@@ -312,141 +223,61 @@ NMO_bundles_long = []
 
 NMO_bundles_lesion = []
 NMO_bundles_lesion_long = []
-
-NMO_bundles_l_pair = []
-NMO_bundles_l_pair_long = []
-
-NMO_bundles_l_focal = []
-NMO_bundles_l_focal_long = []
 # loop through each participant
 for NMO_patient in NMO_patients:
-    if NMO_patient in ['NAWA_037','NAWA_040','Nawa_042']:
-        # read participant's csv file into a dataframe
-        df = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
-        # make a mean out of the 100 points sampled per tract 
-        df = df.mean().to_frame().reset_index()
-     
-        # add participant id column to the dataframe
-        df['Participant'] = NMO_patient
+    # read participant's csv file into a dataframe
+    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
+    df_l = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
+    '''
+    #####Lesioned WM######
+    # Create a figure with 50 subplots
+    fig, axes = plt.subplots(nrows=10, ncols=5, figsize=(60, 50))
+    
+    # Loop through each column of the data and plot it on a separate subplot
+    for i, col in enumerate(df_l.columns):
+        # Select the data for the current column
+        column_data = df_l[col]
+        
+        # Calculate the row and column indices for the current subplot
+        row_idx = i // 5
+        col_idx = i % 5
+        
+        # Plot the data on the current subplot
+        axes[row_idx, col_idx].plot(column_data)
+        
+        # Set the title for the current subplot
+        axes[row_idx, col_idx].set_title(col)
+    
+    # Set the overall title for the figure
+    fig.suptitle(f'NMOSD {NMO_patient} data for 50 lesioned Tracts')
+    
+    # Adjust the spacing between the subplots
+    fig.subplots_adjust(wspace=0.25, hspace=1.2)
+    
+    fig.savefig(os.path.join(path_to_write+folder_name, f"NMOSD_lesioned_tracts_{NMO_patient}.png"))
+    
+    # Close the figure window without displaying the figure
+    plt.close()
+    ####################        
+    '''
+    # make a mean out of the 100 points sampled per tract 
+    df = df.mean().to_frame().reset_index()
+    df_l = df_l.mean().to_frame().reset_index()
  
-        # bring it from long to wide format
-        df_pivot = df.pivot(index='Participant', columns='index', values=0)
+    # add participant id column to the dataframe
+    df['Participant'] = NMO_patient
+    df_l['Participant'] = NMO_patient
+
+    # bring it from long to wide format
+    df_pivot = df.pivot(index='Participant', columns='index', values=0)
+    df_pivot_lesion = df_l.pivot(index='Participant', columns='index', values=0)
+
+    # append participant's data to the list
+    NMO_bundles.append(df_pivot)
+    NMO_bundles_long.append(df)
     
-        # append participant's data to the list
-        NMO_bundles.append(df_pivot)
-        NMO_bundles_long.append(df)
-        
-        #for those special cases create data with nan values to avoid further issues with df lenght
-        df_pivot_lesion = pd.DataFrame(np.nan, index=df_pivot.index, columns=df_pivot.columns)
-        df_l = pd.DataFrame(np.nan, index=df.index, columns=df.columns)
-
-        df_pivot_l_pair = pd.DataFrame(np.nan, index=df_pivot.index, columns=df_pivot.columns)
-        df_l_pair = pd.DataFrame(np.nan, index=df.index, columns=df.columns)
-        
-        df_pivot_l_focal = pd.DataFrame(np.nan, index=df_pivot.index, columns=df_pivot.columns)
-        df_l_focal = pd.DataFrame(np.nan, index=df.index, columns=df.columns)
-        
-        #append them to the masterlists
-        NMO_bundles_lesion.append(df_pivot_lesion)
-        NMO_bundles_lesion_long.append(df_l)
-        
-        NMO_bundles_l_pair.append(df_pivot_l_pair)
-        NMO_bundles_l_pair_long.append(df_l_pair)
-        
-        NMO_bundles_l_focal.append(df_pivot_l_focal)
-        NMO_bundles_l_focal_long.append(df_l_focal)
-
-    else:
-        # read participant's csv file into a dataframe
-        df = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
-        df_l = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_lesions_NODDI_ND.csv", sep=';')
-        df_l_id = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{NMO_patient}/Brain/DWI/tractseg_output/Tractometry_lesion_identification.csv", sep=';')
-        df_l_id_copy = df_l_id.copy()
-
-        '''
-        #####Lesioned WM######
-        # Create a figure with 50 subplots
-        fig, axes = plt.subplots(nrows=10, ncols=5, figsize=(60, 50))
-        
-        # Loop through each column of the data and plot it on a separate subplot
-        for i, col in enumerate(df_l.columns):
-            # Select the data for the current column
-            column_data = df_l[col]
-            
-            # Calculate the row and column indices for the current subplot
-            row_idx = i // 5
-            col_idx = i % 5
-            
-            # Plot the data on the current subplot
-            axes[row_idx, col_idx].plot(column_data)
-            
-            # Set the title for the current subplot
-            axes[row_idx, col_idx].set_title(col)
-        
-        # Set the overall title for the figure
-        fig.suptitle(f'NMOSD {NMO_patient} data for 50 lesioned Tracts')
-        
-        # Adjust the spacing between the subplots
-        fig.subplots_adjust(wspace=0.25, hspace=1.2)
-        
-        fig.savefig(os.path.join(path_to_write+folder_name, f"NMOSD_lesioned_tracts_{NMO_patient}.png"))
-        
-        # Close the figure window without displaying the figure
-        plt.close()
-        ####################        
-        '''
-        
-        #Using the lesion identification file based on the lesion mask exclude lesioned NDI values from the lesion dependent tractometry
-        #convert lesioned wm to nan values
-        true_false = df_l_id[df_l_id <= 0.2].notna()
-        #select parts of the df that do no the nan values
-        lesions_nan = df_l_id[df_l_id >= 0.2] = np.nan
-        #replace non lesioned 0 values with real NDI values
-        df_lesion = df_l.where(true_false,df_l_id)
-      
-        ###make a lesion independent df for comaprison with exactly the same segments
-        #replace non lesioned 0 values with real NDI values
-        df_l_pair = df.where(true_false,df_l_id)
-        
-        ##create parts of tracts that only contain lesions
-        #convert lesioned wm to nan values
-        true_false = df_l_id_copy[df_l_id_copy > 0.2].notna()
-        #select parts of the df that do no the nan values
-        lesions_nan = df_l_id_copy[df_l_id_copy < 0.2] = np.nan
-        #replace non lesioned 0 values with real NDI values
-        df_l_focal = df_l.where(true_false,df_l_id_copy)
-     
-        # make a mean out of the 100 points sampled per tract 
-        df = df.mean().to_frame().reset_index()
-        df_l = df_lesion.mean().to_frame().reset_index()
-        df_l_pair = df_l_pair.mean().to_frame().reset_index()
-        df_l_focal = df_l_focal.mean().to_frame().reset_index()
-     
-        
-        # add participant id column to the dataframe
-        df['Participant'] = NMO_patient
-        df_l['Participant'] = NMO_patient
-        df_l_pair['Participant'] = NMO_patient
-        df_l_focal['Participant'] = NMO_patient
-
-        # bring it from long to wide format
-        df_pivot = df.pivot(index='Participant', columns='index', values=0)
-        df_pivot_lesion = df_l.pivot(index='Participant', columns='index', values=0)   
-        df_pivot_l_pair = df_l_pair.pivot(index='Participant', columns='index', values=0)
-        df_pivot_l_focal = df_l_focal.pivot(index='Participant', columns='index', values=0)
-    
-        # append participant's data to the list
-        NMO_bundles.append(df_pivot)
-        NMO_bundles_long.append(df)
-        
-        NMO_bundles_lesion.append(df_pivot_lesion)
-        NMO_bundles_lesion_long.append(df_l)
-        
-        NMO_bundles_l_pair.append(df_pivot_l_pair)
-        NMO_bundles_l_pair_long.append(df_l_pair)
-        
-        NMO_bundles_l_focal.append(df_pivot_l_focal)
-        NMO_bundles_l_focal_long.append(df_l_focal)
+    NMO_bundles_lesion.append(df_pivot_lesion)
+    NMO_bundles_lesion_long.append(df_l)
 
 # concatenate all participant's data into a single dataframe
 NMO_bundles_all = pd.concat(NMO_bundles)
@@ -455,17 +286,8 @@ NMO_bundles_long = pd.concat(NMO_bundles_long)
 NMO_bundles_lesion_all = pd.concat(NMO_bundles_lesion)
 NMO_bundles_lesion_long = pd.concat(NMO_bundles_lesion_long)
 
-NMO_bundles_l_pair_all = pd.concat(NMO_bundles_l_pair)
-NMO_bundles_l_pair_long = pd.concat(NMO_bundles_l_pair_long)
-
-NMO_bundles_l_focal_all = pd.concat(NMO_bundles_l_focal)
-NMO_bundles_l_focal_long = pd.concat(NMO_bundles_l_focal_long)
-
 NMO_bundles_all = NMO_bundles_all.replace(0, np.nan)
 NMO_bundles_lesion_all = NMO_bundles_lesion_all.replace(0, np.nan)
-NMO_bundles_l_pair_all = NMO_bundles_l_pair_all.replace(0, np.nan)
-NMO_bundles_l_focal_all = NMO_bundles_l_focal_all.replace(0, np.nan)
-
 
 ####Further reduce the number of tracts combine left-right anc CC######
 
@@ -504,55 +326,16 @@ for basename in slf_basenames:
 # compute mean of all columns and create a new column with that mean value for each row
 NMO_bundles_lesions_total = NMO_bundles_lesion_all.mean(axis=1).to_frame(name='lesions_total')
 
-##NAWM pair for lesions
-# create a new DataFrame with mean values of each tract
-basename = NMO_bundles_l_pair_all.columns.str.rsplit('_', n=1).str[0]
-NMO_bundles_l_pair_reduced = NMO_bundles_l_pair_all.groupby(basename, axis=1).mean()
-
-# handle special cases of SLF tracts
-slf_cols = NMO_bundles_l_pair_reduced.columns.str.startswith('SLF_')
-slf_basenames = NMO_bundles_l_pair_reduced.columns[slf_cols].str.rsplit('_', n=1).str[0].unique()
-
-for basename in slf_basenames:
-    slf_mean = NMO_bundles_l_pair_reduced.filter(regex=f'{basename}_').mean(axis=1)
-    NMO_bundles_l_pair_reduced = NMO_bundles_l_pair_reduced.drop(columns=NMO_bundles_l_pair_reduced.filter(regex=f'{basename}_').columns)
-    NMO_bundles_l_pair_reduced[basename] = slf_mean
-
-# compute mean of all columns and create a new column with that mean value for each row
-NMO_bundles_l_pair_total = NMO_bundles_l_pair_all.mean(axis=1).to_frame(name='l_pair_total')
-
-##focal lesions
-# create a new DataFrame with mean values of each tract
-basename = NMO_bundles_l_focal_all.columns.str.rsplit('_', n=1).str[0]
-NMO_bundles_l_focal_reduced = NMO_bundles_l_focal_all.groupby(basename, axis=1).mean()
-
-# handle special cases of SLF tracts
-slf_cols = NMO_bundles_l_focal_reduced.columns.str.startswith('SLF_')
-slf_basenames = NMO_bundles_l_focal_reduced.columns[slf_cols].str.rsplit('_', n=1).str[0].unique()
-
-for basename in slf_basenames:
-    slf_mean = NMO_bundles_l_focal_reduced.filter(regex=f'{basename}_').mean(axis=1)
-    NMO_bundles_l_focal_reduced = NMO_bundles_l_focal_reduced.drop(columns=NMO_bundles_l_focal_reduced.filter(regex=f'{basename}_').columns)
-    NMO_bundles_l_focal_reduced[basename] = slf_mean
-
-# compute mean of all columns and create a new column with that mean value for each row
-NMO_bundles_l_focal_total = NMO_bundles_l_focal_all.mean(axis=1).to_frame(name='l_focal_total')
-
 # save the result to a new csv file
-NMO_bundles_all.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_mean_NDI_nosubs.csv', index=True)
-NMO_bundles_lesion_all.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_lesions.csv', index=True)
+NMO_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_mean_NDI_nosubs.csv', index=True)
+NMO_bundles_lesion_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_NDI_lesions.csv', index=True)
 
-NMO_bundles_NAWM_reduced.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_NAWM_reduced.csv', index=True)
-NMO_bundles_lesions_reduced.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_lesions_reduced.csv', index=True)
+NMO_bundles_NAWM_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_NDI_NAWM_reduced.csv', index=True)
+NMO_bundles_lesions_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_NDI_lesions_reduced.csv', index=True)
 
-NMO_bundles_NAWM_total.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_NAWM_total.csv', index=True)
-NMO_bundles_lesions_total.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_lesions_total.csv', index=True)
+NMO_bundles_NAWM_total.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_NDI_NAWM_total.csv', index=True)
+NMO_bundles_lesions_total.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_tracts_NDI_lesions_total.csv', index=True)
 
-NMO_bundles_l_pair_reduced.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_l_pair_reduced.csv', index=True)
-NMO_bundles_l_pair_total.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_l_pair_total.csv', index=True)
-
-NMO_bundles_l_focal_reduced.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_l_focal_reduced.csv', index=True)
-NMO_bundles_l_focal_total.to_csv('/Volumes/ms/seropositive_project/NMO_tracts_NDI_l_focal_total.csv', index=True)
 
 '''
 #Plot the avergae bundle load
@@ -619,7 +402,7 @@ HC_bundles_long = []
 # loop through each participant
 for subject in HC:
     # read participant's csv file into a dataframe
-    df = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{subject}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
+    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{subject}/Brain/DWI/tractseg_output/Tractometry_NAWM_NODDI_ND.csv", sep=';')
     df = df.mean().to_frame().reset_index()
     # add participant id column to the dataframe
     df['Participant'] = subject
@@ -657,11 +440,11 @@ HC_bundles_NAWM_total = HC_bundles_all.mean(axis=1).to_frame(name='NAWM_total')
 
 
 # save the result to a new csv file
-HC_bundles_all.to_csv('/Volumes/ms/seropositive_project/HC_tracts_mean_NDI.csv', index=True)
+HC_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/HC_tracts_mean_NDI.csv', index=True)
 
-HC_bundles_NAWM_reduced.to_csv('/Volumes/ms/seropositive_project/HC_tracts_NDI_NAWM_reduced.csv', index=True)
+HC_bundles_NAWM_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/HC_tracts_NDI_NAWM_reduced.csv', index=True)
 
-HC_bundles_NAWM_total.to_csv('/Volumes/ms/seropositive_project/HC_tracts_NDI_NAWM_total.csv', index=True)
+HC_bundles_NAWM_total.to_csv('/Volumes/pjakuszyk/seropositive_project/HC_tracts_NDI_NAWM_total.csv', index=True)
 
 '''
 #Plot the avergae bundle load
@@ -773,7 +556,7 @@ for bundle in SM_bundles_all.columns:
     })
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/shapiro_wilk_test_results.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results.csv', index=False)
 
 #MS vs HC
 
@@ -934,7 +717,7 @@ results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Correct
 results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df.to_csv('/Volumes/ms/seropositive_project/All_groups_all_tracts_t_test_results_nosubs.csv', index=False)
+results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/All_groups_all_tracts_t_test_results_nosubs.csv', index=False)
 #%%Independent samples tests for reduced tracts
 # Calculate n for every group and tract
 n_sample_sm = []
@@ -975,7 +758,7 @@ for bundle in SM_bundles_NAWM_reduced.columns:
     })
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/reduced_NAWM_shapiro_wilk_test_results.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/reduced_NAWM_shapiro_wilk_test_results.csv', index=False)
 
 #MS vs HC
 
@@ -1136,7 +919,7 @@ results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Correct
 results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df.to_csv('/Volumes/ms/seropositive_project/All_groups_all_tracts_t_test_results_reduced.csv', index=False)
+results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/All_groups_all_tracts_t_test_results_reduced.csv', index=False)
 
 #%%#########Total NAWM
 # Calculate n for every group and tract
@@ -1172,7 +955,7 @@ sw_test_results.append({
     })
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/total_NAWM_shapiro_wilk_test_results.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/total_NAWM_shapiro_wilk_test_results.csv', index=False)
 
 #MS vs HC
 
@@ -1335,7 +1118,7 @@ results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Correct
 results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df.to_csv('/Volumes/ms/seropositive_project/All_groups_all_tracts_t_test_results_total.csv', index=False)
+results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/All_groups_all_tracts_t_test_results_total.csv', index=False)
 
 
 
@@ -1365,7 +1148,7 @@ for bundle in SM_bundles_lesion_all.columns:
 
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/shapiro_wilk_test_results_lesions.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions.csv', index=False)
 
 #Distribution is not normal
 # Perform a mann whitney for each tract
@@ -1447,7 +1230,7 @@ results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (res
 results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df_lesions.to_csv('/Volumes/ms/seropositive_project/MS_NAWM_vs_lesions_t_test_results.csv', index=False)
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_NAWM_vs_lesions_t_test_results.csv', index=False)
 
 ##########NMO############
 
@@ -1472,7 +1255,7 @@ for bundle in NMO_bundles_lesion_all.columns:
     })
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/shapiro_wilk_test_results_lesions_nmosd.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions_nmosd.csv', index=False)
 
 #Distribution is not normal
 # Perform a mann whitney for each tract
@@ -1558,7 +1341,7 @@ results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (res
 results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df_lesions.to_csv('/Volumes/ms/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results.csv', index=False)
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results.csv', index=False)
 
 
 #%%#########Lesioned streamlines vs NAWM streamlines for reduced tracts
@@ -1580,7 +1363,7 @@ for bundle in SM_bundles_lesions_reduced.columns:
 
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/shapiro_wilk_test_results_lesions_reduced.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions_reduced.csv', index=False)
 
 #Distribution is not normal
 # Perform a mann whitney for each tract
@@ -1592,22 +1375,21 @@ ci_lower = []
 ci_upper = []
 ratios = []
 n_sample = []
-bundles = []
 
 for bundle in SM_bundles_lesions_reduced.columns:
-    t_stat, p_val = ttest_rel(SM_bundles_lesions_reduced.loc[:, bundle], SM_bundles_l_pair_reduced.loc[:, bundle],nan_policy='omit')
-    t_stats.append(t_stat) # Wilcoxon test doesn't have a test statistic
+    _, p_val = wilcoxon(SM_bundles_lesions_reduced.loc[:, bundle], SM_bundles_NAWM_reduced.loc[:, bundle],nan_policy='omit', zero_method='wilcox')
+    t_stats.append(None) # Wilcoxon test doesn't have a test statistic
     p_vals.append(p_val)
     
     # Calculate the confidence interval for the mean difference and cohen's d effect size
     
     # For proper df calculation define the number of non nan entries in the bundle with lesions
     
-    n = (SM_bundles_lesions_reduced.loc[:, bundle] - SM_bundles_l_pair_reduced.loc[:, bundle]).notna().sum()
+    n = (SM_bundles_lesions_reduced.loc[:, bundle] - SM_bundles_NAWM_reduced.loc[:, bundle]).notna().sum()
     
     n_sample.append(n)
     
-    diff = SM_bundles_lesions_reduced.loc[:, bundle] - SM_bundles_l_pair_reduced.loc[:, bundle]
+    diff = SM_bundles_lesions_reduced.loc[:, bundle] - SM_bundles_NAWM_reduced.loc[:, bundle]
         
     mean_diff=diff.mean()
     
@@ -1629,22 +1411,22 @@ for bundle in SM_bundles_lesions_reduced.columns:
     cohens_ds.append(cohens_d)
     
     #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
-    ratio = SM_bundles_lesions_reduced.loc[:, bundle].std()/SM_bundles_l_pair_reduced.loc[:, bundle].std()
+    ratio = SM_bundles_lesions_reduced.loc[:, bundle].std()/SM_bundles_NAWM_reduced.loc[:, bundle].std()
     
     ratios.append(ratio)
-    
-    bundles.append(bundle)
+
 
 # Correct for multiple comparisons using the FDR procedure and save results to PDF
 p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
 
 # Create a list of values to assign to the "disease" column
-disease_values = ['lesions vs NAWM']*len(bundles)
+disease_values = ['lesions vs NAWM']*21
+bundles_index = SM_bundles_lesions_reduced.columns
 
 results_df_lesions = pd.DataFrame({
     'Comparison': disease_values,
     'n': n_sample,
-    'Bundle': bundles,
+    'Bundle': bundles_index,
     'Ratio': ratios,
     'T-value': t_stats,
     'Cohen\'s d': cohens_ds,
@@ -1663,7 +1445,7 @@ results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (res
 results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df_lesions.to_csv('/Volumes/ms/seropositive_project/MS_NAWM_vs_lesions_t_test_results_reduced.csv', index=False)
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_NAWM_vs_lesions_t_test_results_reduced.csv', index=False)
 
 ##########NMO############
 
@@ -1683,7 +1465,7 @@ for bundle in NMO_bundles_lesions_reduced.columns:
     })
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/shapiro_wilk_test_results_lesions_nmosd_reduced.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions_nmosd_reduced.csv', index=False)
 '''
 #Distribution is not normal
 # Perform a mann whitney for each tract
@@ -1698,23 +1480,21 @@ bundles =[]
 n_sample = []
 
 for bundle in NMO_bundles_lesions_reduced.columns:
-    if NMO_bundles_lesions_reduced.loc[:, bundle].isnull().all() or NMO_bundles_l_pair_reduced.loc[:, bundle].isnull().all():
+    if NMO_bundles_lesions_reduced.loc[:, bundle].isnull().all() or NMO_bundles_NAWM_reduced.loc[:, bundle].isnull().all():
         # skip empty columns
         continue
     else:
-  # _, p_val = wilcoxon(NMO_bundles_lesions_reduced.loc[:, bundle], NMO_bundles_l_pair_reduced.loc[:, bundle],nan_policy='omit', zero_method='wilcox')
-        t_stat, p_val = ttest_rel(NMO_bundles_lesions_reduced.loc[:, bundle], NMO_bundles_l_pair_reduced.loc[:, bundle],nan_policy='omit')
-        t_stats.append(t_stat) 
-        
+        _, p_val = wilcoxon(NMO_bundles_lesions_reduced.loc[:, bundle], NMO_bundles_NAWM_reduced.loc[:, bundle],nan_policy='omit', zero_method='wilcox')
+        t_stats.append(None) # Wilcoxon test doesn't have a test statistic
         p_vals.append(p_val)
         
         # For proper df calculation define the number of non nan entries in the bundle with lesions
        
-        n = (NMO_bundles_lesions_reduced.loc[:, bundle] - NMO_bundles_l_pair_reduced.loc[:, bundle]).notna().sum()
+        n = (NMO_bundles_lesions_reduced.loc[:, bundle] - NMO_bundles_NAWM_reduced.loc[:, bundle]).notna().sum()
        
         n_sample.append(n)
        
-        diff = NMO_bundles_lesions_reduced.loc[:, bundle] - NMO_bundles_l_pair_reduced.loc[:, bundle]
+        diff = NMO_bundles_lesions_reduced.loc[:, bundle] - NMO_bundles_NAWM_reduced.loc[:, bundle]
        
         mean_diff=diff.mean()
        
@@ -1736,7 +1516,7 @@ for bundle in NMO_bundles_lesions_reduced.columns:
         cohens_ds.append(cohens_d)
         
         #An informal check for this is to compare the ratio of the two sample standard deviations. If the two are equal, the ratio would be 1 but a good Rule of Thumb to use is to see if the ratio falls from 0.5 to 2.
-        ratio = NMO_bundles_lesions_reduced.loc[:, bundle].std()/NMO_bundles_l_pair_reduced.loc[:, bundle].std()
+        ratio = NMO_bundles_lesions_reduced.loc[:, bundle].std()/NMO_bundles_NAWM_reduced.loc[:, bundle].std()
         
         ratios.append(ratio)
         
@@ -1771,7 +1551,7 @@ results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (res
 results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df_lesions.to_csv('/Volumes/ms/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results_reduced.csv', index=False)
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results_reduced.csv', index=False)
 #%%#########Lesioned streamlines vs NAWM streamlines for total 
 ##########SM############
 
@@ -1789,7 +1569,7 @@ sw_test_results.append({
 
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/shapiro_wilk_test_results_lesions_total.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/shapiro_wilk_test_results_lesions_total.csv', index=False)
 
 #Distribution is not normal
 # Perform a mann whitney for each tract
@@ -1803,8 +1583,8 @@ ratios = []
 n_sample = []
 
 
-t_stat, p_val = ttest_rel(SM_bundles_lesions_total, SM_bundles_NAWM_total,nan_policy='omit')
-t_stats.append(t_stat) # Wilcoxon test doesn't have a test statistic
+_, p_val = wilcoxon(SM_bundles_lesions_total, SM_bundles_NAWM_total,nan_policy='omit', zero_method='wilcox')
+t_stats.append(None) # Wilcoxon test doesn't have a test statistic
 p_vals.append(p_val.item())
 
 # Calculate the confidence interval for the mean difference and cohen's d effect size
@@ -1869,7 +1649,7 @@ results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (res
 results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df_lesions.to_csv('/Volumes/ms/seropositive_project/MS_NAWM_vs_lesions_t_test_results_total.csv', index=False, float_format='%.3f')
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_NAWM_vs_lesions_t_test_results_total.csv', index=False, float_format='%.3f')
 
 ##########NMO############
 
@@ -1887,7 +1667,7 @@ sw_test_results.append({
 
 
 sw_test_df = pd.DataFrame(sw_test_results)
-sw_test_df.to_csv('/Volumes/ms/seropositive_project/NMO_shapiro_wilk_test_results_lesions_total.csv', index=False)
+sw_test_df.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_shapiro_wilk_test_results_lesions_total.csv', index=False)
 
 #Distribution is not normal
 # Perform a mann whitney for each tract
@@ -1901,8 +1681,8 @@ ratios = []
 n_sample = []
 
 
-t_stat, p_val = ttest_rel(NMO_bundles_lesions_total, NMO_bundles_NAWM_total,nan_policy='omit')
-t_stats.append(t_stat) # Wilcoxon test doesn't have a test statistic
+_, p_val = wilcoxon(NMO_bundles_lesions_total, NMO_bundles_NAWM_total,nan_policy='omit', zero_method='wilcox')
+t_stats.append(None) # Wilcoxon test doesn't have a test statistic
 p_vals.append(p_val.item())
 
 # Calculate the confidence interval for the mean difference and cohen's d effect size
@@ -1967,7 +1747,7 @@ results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.001) & (res
 results_df_lesions.loc[(results_df_lesions['Corrected P-value'] >= 0.01) & (results_df_lesions['Corrected P-value'] < 0.05), 'Significance'] = '*'
 
 
-results_df_lesions.to_csv('/Volumes/ms/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results_total.csv', index=False, float_format='%.3f')
+results_df_lesions.to_csv('/Volumes/pjakuszyk/seropositive_project/NMOSD_NAWM_vs_lesions_t_test_results_total.csv', index=False, float_format='%.3f')
 #%%####PLOTS#####
 
 ##########For reduced data#######
@@ -1985,29 +1765,22 @@ axs = axs.flatten()
 # Iterate over the tracts and plot a boxplot for each tract in each subplot
 for i, tract in enumerate(tracts):
     # Get the NDI values for the current tract for each group
-    data = [NMO_bundles_NAWM_reduced[tract].dropna().values, 
-            SM_bundles_NAWM_reduced[tract].dropna().values,
-            HC_bundles_NAWM_reduced[tract].dropna().values]
+    group1_values = HC_bundles_NAWM_reduced[tract].dropna().values
+    group2_values = NMO_bundles_NAWM_reduced[tract].dropna().values
+    group3_values = SM_bundles_NAWM_reduced[tract].dropna().values
+        
+    # Plot a boxplot for the current tract in each subplot
+    box = axs[i].boxplot([group1_values, group2_values, group3_values], patch_artist=True, showmeans=True, meanline=True)
+    # Define the colors for each group
+    colors = ['beige','azure','lavender']
     
-    # Create the boxplot
-    pt.half_violinplot(data = data, width = .6, palette="Set2", ax=axs[i])
-    sns.stripplot(data = data, palette="Set2", ax=axs[i])
-    # plot the mean line
-    sns.boxplot(showmeans=True,
-                meanline=True,
-                meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-                medianprops={'visible': False},
-                whiskerprops={'visible': False},
-                data=data,
-                showfliers=False,
-                showbox=False,
-                showcaps=False,
-                ax=axs[i])
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
         
     #add horizontal grid lines
     axs[i].yaxis.grid(True)    
     axs[i].set_title(tract)
-    axs[i].set_xticklabels(['NMO', 'MS', 'HC'])
+    axs[i].set_xticklabels(['HC', 'NMO', 'MS'])
 
 # Add a main title to the figure
 fig.suptitle('Lesion-independent NDI values for each tract by group')
@@ -2017,8 +1790,6 @@ fig.tight_layout()
 
 # Show the plot
 plt.show()
-
-
 
 
 
@@ -2035,23 +1806,16 @@ axs = axs.flatten()
 # Iterate over the tracts and plot a boxplot for each tract in each subplot
 for i, tract in enumerate(tracts):
     # Get the NDI values for the current tract for each group
-    data = [NMO_bundles_lesions_reduced[tract].dropna().values, 
-            SM_bundles_lesions_reduced[tract].dropna().values]
+    group1_values = NMO_bundles_lesions_reduced[tract].dropna().values
+    group2_values = SM_bundles_lesions_reduced[tract].dropna().values
     
-    # Create the boxplot
-    pt.half_violinplot(data = data, width = .6, palette="Set2", ax=axs[i])
-    sns.stripplot(data = data, palette="Set2", ax=axs[i])
-    # plot the mean line
-    sns.boxplot(showmeans=True,
-                meanline=True,
-                meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-                medianprops={'visible': False},
-                whiskerprops={'visible': False},
-                data=data,
-                showfliers=False,
-                showbox=False,
-                showcaps=False,
-                ax=axs[i])       
+    # Plot a boxplot for the current tract in each subplot
+    box = axs[i].boxplot([group1_values, group2_values], patch_artist=True, showmeans=True, meanline=True)
+    # Define the colors for each group
+    colors = ['azure','lavender']
+    
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
         
     #add horizontal grid lines
     axs[i].yaxis.grid(True)    
@@ -2068,133 +1832,35 @@ fig.tight_layout()
 plt.show()
 
 
-###lesions vs NAWM###
-
-###MS####
-# Create a list of the 21 tracts
-tracts = SM_bundles_NAWM_reduced.columns.tolist()
-
-# Create a figure with a 7x3 subplot grid
-fig, axs = plt.subplots(nrows=3, ncols=7, figsize=(30, 20))
-
-# Flatten the axs array for easier indexing
-axs = axs.flatten()
-
-# Iterate over the tracts and plot a boxplot for each tract in each subplot
-for i, tract in enumerate(tracts):
-    # Get the NDI values for the current tract for each group
-    data = [SM_bundles_l_pair_reduced[tract].dropna().values, 
-            SM_bundles_lesions_reduced[tract].dropna().values,
-            SM_bundles_l_focal_reduced[tract].dropna().values]
-        # Create the boxplot
-    pt.half_violinplot(data = data, width = .6, palette="Set2", ax=axs[i])
-    sns.stripplot(data = data, palette="Set2", ax=axs[i])
-    # plot the mean line
-    sns.boxplot(showmeans=True,
-                meanline=True,
-                meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-                medianprops={'visible': False},
-                whiskerprops={'visible': False},
-                data=data,
-                showfliers=False,
-                showbox=False,
-                showcaps=False,
-                ax=axs[i])       
-        
-    #add horizontal grid lines
-    axs[i].yaxis.grid(True)    
-    axs[i].set_title(tract)
-    axs[i].set_xticklabels(['Independent','Dependent','Lesion'])
-
-# Add a main title to the figure
-fig.suptitle('Lesion dependent vs. independent tracts NDI values in MS')
-
-# Adjust spacing between subplots
-fig.tight_layout()
-
-# Show the plot
-plt.show()
-
-###NMO####
-# Create a list of the 21 tracts
-tracts = NMO_bundles_NAWM_reduced.columns.tolist()
-
-# Create a figure with a 7x3 subplot grid
-fig, axs = plt.subplots(nrows=3, ncols=7, figsize=(30, 20))
-
-# Flatten the axs array for easier indexing
-axs = axs.flatten()
-
-# Iterate over the tracts and plot a boxplot for each tract in each subplot
-for i, tract in enumerate(tracts):
-    # Get the NDI values for the current tract for each group
-    data = [NMO_bundles_l_pair_reduced[tract].dropna().values, 
-            NMO_bundles_lesions_reduced[tract].dropna().values,
-            NMO_bundles_l_focal_reduced[tract].dropna().values]
-        # Create the boxplot
-    pt.half_violinplot(data = data, width = .6, palette="Set2", ax=axs[i])
-    sns.stripplot(data = data, palette="Set2", ax=axs[i])
-    # plot the mean line
-    sns.boxplot(showmeans=True,
-                meanline=True,
-                meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-                medianprops={'visible': False},
-                whiskerprops={'visible': False},
-                data=data,
-                showfliers=False,
-                showbox=False,
-                showcaps=False,
-                ax=axs[i])       
-        
-    #add horizontal grid lines
-    axs[i].yaxis.grid(True)    
-    axs[i].set_title(tract)
-    axs[i].set_xticklabels(['Independent','Dependent','Lesions'])
-
-# Add a main title to the figure
-fig.suptitle('Lesion dependent vs. independent tracts NDI values in NMOSD')
-
-# Adjust spacing between subplots
-fig.tight_layout()
-
-# Show the plot
-plt.show()
-
 ####For total data#######
 
 #####NAWM######
 # Combine the dataframes into a list
-data = [NMO_bundles_NAWM_total['NAWM_total'].dropna().values, 
-        SM_bundles_NAWM_total['NAWM_total'].dropna().values,
-        HC_bundles_NAWM_total['NAWM_total'].dropna().values]
+data = [HC_bundles_NAWM_total['NAWM_total'].dropna().values, 
+        NMO_bundles_NAWM_total['NAWM_total'].dropna().values, 
+        SM_bundles_NAWM_total['NAWM_total'].dropna().values]
 
 # Set up the figure and axis
 fig, ax = plt.subplots()
 
 # Create the boxplot
-ax = pt.half_violinplot(data = data, width = .6, palette="Set2")
-ax = sns.stripplot(data = data, palette="Set2")
-# plot the mean line
-ax = sns.boxplot(showmeans=True,
-            meanline=True,
-            meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-            medianprops={'visible': False},
-            whiskerprops={'visible': False},
-            data=data,
-            showfliers=False,
-            showbox=False,
-            showcaps=False,
-            ax=ax)
+box = ax.boxplot(data, patch_artist=True, showmeans=True, meanline=True)
+# Define the colors for each group
+colors = ['beige','azure','lavender']
+
+for patch, color in zip(box['boxes'], colors):
+    patch.set_facecolor(color)
 
 #add horizontal grid lines
 ax.yaxis.grid(True)   
 
 # Set the x-axis tick labels
-ax.set_xticklabels(['NMO', 'MS', 'HC'])
+ax.set_xticklabels(['HC', 'NMO', 'MS'])
 
 # Add a title and y-axis label
 ax.set_title('NDI in lesion independent tracts')
 ax.set_ylabel('NDI')
+
 # Show the plot
 plt.show()
 
@@ -2206,19 +1872,14 @@ data = [NMO_bundles_lesions_total['lesions_total'].dropna().values,
 # Set up the figure and axis
 fig, ax = plt.subplots()
 
-ax = pt.half_violinplot(data = data, width = .6, palette="Set2")
-ax = sns.stripplot(data = data, palette="Set2")
-# plot the mean line
-ax = sns.boxplot(showmeans=True,
-            meanline=True,
-            meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-            medianprops={'visible': False},
-            whiskerprops={'visible': False},
-            data=data,
-            showfliers=False,
-            showbox=False,
-            showcaps=False,
-            ax=ax)
+# Create the boxplot
+box = ax.boxplot(data, patch_artist=True, showmeans=True, meanline=True)
+
+# Define the colors for each group
+colors = ['azure','lavender']
+
+for patch, color in zip(box['boxes'], colors):
+    patch.set_facecolor(color)
 
 #add horizontal grid lines
 ax.yaxis.grid(True)   
@@ -2236,9 +1897,9 @@ plt.show()
 #####Everything######
 # Combine the dataframes into a list
 data = [
+        HC_bundles_NAWM_total['NAWM_total'].dropna().values,
         NMO_bundles_NAWM_total['NAWM_total'].dropna().values, 
         SM_bundles_NAWM_total['NAWM_total'].dropna().values,
-        HC_bundles_NAWM_total['NAWM_total'].dropna().values,
         NMO_bundles_lesions_total['lesions_total'].dropna().values, 
         SM_bundles_lesions_total['lesions_total'].dropna().values       
         ]
@@ -2246,25 +1907,20 @@ data = [
 # Set up the figure and axis
 fig, ax = plt.subplots()
 
-ax = pt.half_violinplot(data = data, width = .6, palette="Set2")
-ax = sns.stripplot(data = data, palette="Set2")
-# plot the mean line
-ax = sns.boxplot(showmeans=True,
-            meanline=True,
-            meanprops={'color': 'k', 'ls': '--', 'lw': 1.5},
-            medianprops={'visible': False},
-            whiskerprops={'visible': False},
-            data=data,
-            showfliers=False,
-            showbox=False,
-            showcaps=False,
-            ax=ax)
+# Create the boxplot
+box = ax.boxplot(data, patch_artist=True, showmeans=True, meanline=True)
+
+# Define the colors for each group
+colors = ['beige','azure','lavender','azure','lavender']
+
+for patch, color in zip(box['boxes'], colors):
+    patch.set_facecolor(color)
 
 #add horizontal grid lines
 ax.yaxis.grid(True)   
 
 # Set the x-axis tick labels
-ax.set_xticklabels(['NMO_NAWM', 'MS_NAWM','HC_NAWM','NMO_lesions','MS_lesions'])
+ax.set_xticklabels(['HC_NAWM','NMO_NAWM', 'MS_NAWM', 'NMO_lesions','HC_lesions'])
 
 # Add a title and y-axis label
 ax.set_title('NDI in lesion dependent and independent tracts')

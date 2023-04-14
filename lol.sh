@@ -14,11 +14,10 @@ for participantdir in `cat $1`; do
 
   flairdir=${participantdir}/Brain/FLAIR
 
-
-  if [[ ! -e $dwidir/tractseg_output/TOM_trackings_NAWM ]]; then
-    mkdir $dwidir/tractseg_output/TOM_trackings_NAWM
+  if [[ ! -e $dwidir/bundle_loads ]]; then
+    mkdir $dwidir/bundle_loads
   else
-    echo "$dwidir/tractseg_output/TOM_trackings_NAWM already exists"
+    echo "$dwidir/bundle_loads already exists"
   fi
 
   if grep -q "$participant" $mslist; then
@@ -27,7 +26,7 @@ for participantdir in `cat $1`; do
     then
       echo "Lesions detected"
 
-      for tract in `cat $projectdir/tract_list_copy.txt`; do
+      for tract in `cat $projectdir/tract_list.txt`; do
 
         mrresize -voxel 1.25 ${dwidir}/lesions_in_DWI_masked.nii.gz ${dwidir}/lesions_in_DWI_masked_upsampled.nii.gz -force
 
@@ -56,7 +55,7 @@ for participantdir in `cat $1`; do
     then
       echo "Lesions detected"
 
-      for tract in `cat $projectdir/tract_list_copy.txt`; do
+      for tract in `cat $projectdir/tract_list.txt`; do
 
         mrresize -voxel 1.25 ${dwidir}/lesions_in_DWI_masked.nii.gz ${dwidir}/lesions_in_DWI_masked_upsampled.nii.gz -force
 
