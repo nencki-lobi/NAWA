@@ -1,1 +1,3 @@
-
+Requirements:
+MATLAB + SPM to run the code
+FSL to run clustering and get cluster COG positions
