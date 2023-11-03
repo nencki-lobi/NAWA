@@ -194,7 +194,7 @@ for i, label in enumerate(unique_labels):
     
 #Add information about significance
 p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
-
+#p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='bonferroni')[1]
 # Length of each subarray
 subarray_length = 75
 
@@ -249,7 +249,7 @@ p.add_layer({'left': HC_MS_parcellation_lh, 'right': HC_MS_parcellation_rh}, cma
 p.add_layer({'left': p_vals['HC_MS']['lh'], 'right': p_vals['HC_MS']['rh']}, cmap='binary_r',alpha=0.9, cbar=False)
 fig = p.build()
 fig.axes[0].set_title('T-statistics in RRMS and HC ', pad=-3)
-fig.savefig(path_to_write+'HC_MS_cortex_tstat_plot.png', dpi=500, bbox_inches='tight')
+#fig.savefig(path_to_write+'HC_MS_cortex_tstat_plot.png', dpi=500, bbox_inches='tight')
 
 #HC NMOSD
 p = Plot(fsaverage['infl_left'],fsaverage['infl_right'], views=['lateral','medial'], zoom=1.5)
@@ -257,7 +257,7 @@ p.add_layer({'left': NMOSD_HC_parcellation_lh, 'right': NMOSD_HC_parcellation_rh
 p.add_layer({'left': p_vals['HC_NMOSD']['lh'], 'right': p_vals['HC_NMOSD']['rh']}, cmap='binary_r',alpha=0.9, cbar=False)
 fig = p.build()
 fig.axes[0].set_title('T-statistics in NMOSD and HC ', pad=-3)
-fig.savefig(path_to_write+'HC_NMOSD_cortex_tstat_plot.png', dpi=500, bbox_inches='tight')
+#fig.savefig(path_to_write+'HC_NMOSD_cortex_tstat_plot.png', dpi=500, bbox_inches='tight')
 
 #NMOSD MS
 p = Plot(fsaverage['infl_left'],fsaverage['infl_right'], views=['lateral','medial'], zoom=1.5)
@@ -265,7 +265,7 @@ p.add_layer({'left': NMOSD_MS_parcellation_lh, 'right': NMOSD_MS_parcellation_rh
 p.add_layer({'left': p_vals['NMOSD_MS']['lh'], 'right': p_vals['NMOSD_MS']['rh']}, cmap='binary_r',alpha=0.9, cbar=False)
 fig = p.build()
 fig.axes[0].set_title('T-statistics in RRMS and NMOSD ', pad=-3)
-fig.savefig(path_to_write+'NMOSD_MS_cortex_tstat_plot.png', dpi=500, bbox_inches='tight')
+#fig.savefig(path_to_write+'NMOSD_MS_cortex_tstat_plot.png', dpi=500, bbox_inches='tight')
 
 
 

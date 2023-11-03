@@ -14,7 +14,7 @@ import os
 from scipy.stats import ttest_ind
 import statsmodels.stats.multitest as smm
 from scipy.stats import mannwhitneyu
-from statannotations.Annotator import Annotator
+from math import sqrt
 
 np.set_printoptions(precision=8, suppress=True, formatter={'float': '{: 0.8e}'.format})
 
@@ -49,7 +49,7 @@ SM_bundles = []
 # loop through each participant
 for SM_patient in SM_patients:
     # read participant's csv file into a dataframe
-    df = pd.read_csv(f"/Volumes/pjakuszyk/seropositive_project/participants/{SM_patient}/Brain/DWI/bundle_loads/BundleLoad.csv", header=None)
+    df = pd.read_csv(f"/Volumes/ms/seropositive_project/participants/{SM_patient}/Brain/DWI/bundle_loads/BundleLoad.csv", header=None)
     
     # add participant id column to the dataframe
     df['Participant'] = SM_patient
@@ -67,7 +67,26 @@ SM_bundles_long = pd.concat(SM_bundles)
 SM_bundles_all = SM_bundles_all.pivot(index='Participant', columns='Bundle', values='Bundle_Load')
 
 # save the result to a new csv file
-SM_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_bundles.csv', index=False)
+#SM_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_bundles.csv', index=True)
+
+####Further reduce the number of tracts combine left-right anc CC######
+
+###NAWM
+# create a new DataFrame with mean values of each tract
+basename = SM_bundles_all.columns.str.rsplit('_', n=1).str[0]
+SM_bundles_load_reduced = SM_bundles_all.groupby(basename, axis=1).mean()
+
+# handle special cases of SLF tracts
+slf_cols = SM_bundles_load_reduced.columns.str.startswith('SLF_')
+slf_basenames = SM_bundles_load_reduced.columns[slf_cols].str.rsplit('_', n=1).str[0].unique()
+
+for basename in slf_basenames:
+    slf_mean = SM_bundles_load_reduced.filter(regex=f'{basename}_').mean(axis=1)
+    SM_bundles_load_reduced = SM_bundles_load_reduced.drop(columns=SM_bundles_load_reduced.filter(regex=f'{basename}_').columns)
+    SM_bundles_load_reduced[basename] = slf_mean
+
+# save the result to a new csv file
+#SM_bundles_load_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/SM_bundles_load_reduced.csv', index=True)
 
 #calculate the mean
 
@@ -122,7 +141,7 @@ NMO_bundles = []
 
 # loop through each participant
 for NMO_patient in NMO_patients:
-    file_path = f"/Volumes/pjakuszyk/seropositive_project/participants/{NMO_patient}/Brain/DWI/bundle_loads/BundleLoad.csv"
+    file_path = f"/Volumes/ms/seropositive_project/participants/{NMO_patient}/Brain/DWI/bundle_loads/BundleLoad.csv"
     # check if file exists
     if os.path.exists(file_path):
         # read participant's csv file into a dataframe
@@ -137,7 +156,7 @@ for NMO_patient in NMO_patients:
         NMO_bundles.append(df)
     else:
         # create an empty dataframe with columns Bundle, Bundle_Load, and Participant
-        df = pd.read_csv("/Volumes/pjakuszyk/seropositive_project/BundleLoad_empty.csv", header=None, sep=';')
+        df = pd.read_csv("/Volumes/ms/seropositive_project/csv_results/BundleLoad_empty.csv", header=None, sep=';')
 
         # add participant id to the empty dataframe
         df['Participant'] = NMO_patient
@@ -167,7 +186,26 @@ if np.isnan(NMO_bundles_all.loc['NAWA_036', 'STR_left']):
     NMO_bundles_all.loc['NAWA_036', 'STR_left'] = col2_mean
 
 # save the result to a new csv file
-NMO_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_bundles.csv', index=False)
+#NMO_bundles_all.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_bundles.csv', index=True)
+
+####Further reduce the number of tracts combine left-right anc CC######
+
+###NAWM
+# create a new DataFrame with mean values of each tract
+basename = NMO_bundles_all.columns.str.rsplit('_', n=1).str[0]
+NMO_bundles_load_reduced = NMO_bundles_all.groupby(basename, axis=1).mean()
+
+# handle special cases of SLF tracts
+slf_cols = NMO_bundles_load_reduced.columns.str.startswith('SLF_')
+slf_basenames = NMO_bundles_load_reduced.columns[slf_cols].str.rsplit('_', n=1).str[0].unique()
+
+for basename in slf_basenames:
+    slf_mean = NMO_bundles_load_reduced.filter(regex=f'{basename}_').mean(axis=1)
+    NMO_bundles_load_reduced = NMO_bundles_load_reduced.drop(columns=NMO_bundles_load_reduced.filter(regex=f'{basename}_').columns)
+    NMO_bundles_load_reduced[basename] = slf_mean
+
+# save the result to a new csv file
+#NMO_bundles_load_reduced.to_csv('/Volumes/pjakuszyk/seropositive_project/NMO_bundles_load_reduced.csv', index=True)
 
 #calculate the mean
 
@@ -219,30 +257,50 @@ plt.show()
 # Combine the two dataframes and add a 'Disease' column to identify the two groups
 data_df = pd.concat([SM_bundles_all, NMO_bundles_all], ignore_index=True)
 data_df['Disease'] = ['MS']*len(SM_bundles_all) + ['NMOSD']*len(NMO_bundles_all)
+data_df.to_csv('/Volumes/pjakuszyk/seropositive_project/MS_NMOSD_bundle_load.csv', index=True)
 
 
 
 # Perform a Mann-Whitney U test for each tract
 p_vals = []
+t_stats = []
+cohens_ds = []
+
 for bundle in SM_bundles_all.columns:
     t_stat, p_val = mannwhitneyu(SM_bundles_all.loc[:, bundle], NMO_bundles_all.loc[:, bundle], alternative='two-sided')
+    cohens_d = (SM_bundles_all.loc[:, bundle].mean() - NMO_bundles_all.loc[:, bundle].mean()) / (sqrt((SM_bundles_all.loc[:, bundle].var() + NMO_bundles_all.loc[:, bundle].var()) / 2))
+    cohens_ds.append(cohens_d)
+    t_stats.append(t_stat)
     p_vals.append(p_val)
-    if p_val < 0.001:
-       p_string = '***'
-    elif p_val < 0.01:
-       p_string = '**'
-    elif p_val < 0.05:
-       p_string = '*'
-    else:
-       p_string = ''       
-    
-    print(f"Bundle: {bundle}, T-value: {t_stat:.3f}, P-value: {p_val:.3f}{p_string}")
-    
-
-# Correct for multiple comparisons using the Bonferroni procedure
-p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='bonferroni_holm')[1]
 
 
+# Correct for multiple comparisons using the FDR procedure and save results to PDF
+p_vals_corr = smm.multipletests(p_vals, alpha=0.05, method='fdr_bh')[1]
+
+
+results_df = pd.DataFrame({
+    'Bundle': SM_bundles_all.columns,
+    'T-value': t_stats,
+    'Cohen\'s d': cohens_ds,
+    'P-value': p_vals,
+    'Corrected P-value': p_vals_corr
+})
+
+
+# Add asterisks to significant results for uncorrected p
+results_df['Significance uncorrected'] = ''
+results_df.loc[results_df['P-value'] < 0.001, 'Significance uncorrected'] = '***'
+results_df.loc[(results_df['P-value'] >= 0.001) & (results_df['P-value'] < 0.01), 'Significance uncorrected'] = '**'
+results_df.loc[(results_df['P-value'] >= 0.01) & (results_df['P-value'] < 0.05), 'Significance uncorrected'] = '*'
+
+# Add asterisks to significant results
+results_df['Significance'] = ''
+results_df.loc[results_df['Corrected P-value'] < 0.001, 'Significance'] = '***'
+results_df.loc[(results_df['Corrected P-value'] >= 0.001) & (results_df['Corrected P-value'] < 0.01), 'Significance'] = '**'
+results_df.loc[(results_df['Corrected P-value'] >= 0.01) & (results_df['Corrected P-value'] < 0.05), 'Significance'] = '*'
+
+
+results_df.to_csv('/Volumes/pjakuszyk/seropositive_project/bundle_load_t_test_results.csv', index=False)
 
 
 

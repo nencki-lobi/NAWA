@@ -24,7 +24,7 @@ path_to_tck='/Volumes/ms/seropositive_project/participants/001_MS_F_TP1/Brain/DW
 
 path_to_nii='/Volumes/ms/seropositive_project/participants/001_MS_F_TP1/Brain/DWI/tractseg_output/TOM/'
 
-path_to_write='/Volumes/ms/seropositive_project/track_figures/group_comparisons/'
+path_to_write='/Volumes/ms/seropositive_project/tract_figures/group_comparisons/'
 
 
 
@@ -56,7 +56,7 @@ MS_HC_NAWM_significant_tracts = ["AF_left", "AF_right", "CC_1", "CC_2", "CC_3", 
 
 MS_HC_LD_significant_tracts = ["AF_left", "AF_right", "ATR_left", "ATR_right", "CC_2", "CC_3", "CC_4", "CC_5", "CC_6",
     "CC_7", "CG_left", "CG_right", "CST_left", "CST_right", "FPT_left", "FPT_right", "IFO_left",
-    "IFO_right", "ILF_left", "ILF_right", "OR_right", "POPT_left", "POPT_right", "SLF_III_left",
+    "IFO_right", "ILF_left", "ILF_right", "MCP","OR_right", "POPT_left", "POPT_right", "SLF_III_left",
     "SLF_III_right", "SLF_II_left", "SLF_II_right", "SLF_I_left", "SLF_I_right", "STR_left",
     "STR_right", "ST_FO_left", "ST_PREM_left", "ST_PREM_right", "T_OCC_right", "T_PAR_left",
     "T_PAR_right", "T_PREM_left", "T_PREM_right", "UF_left"]
@@ -164,6 +164,27 @@ window.record(scene, out_path=path_to_write+'MS_NMOSD_NAWM_RH.png', size=(800, 8
 
 scene.set_camera(position=(-340.76, -38.83, -54.52), focal_point=(-2.63, 20.69, -7.20), view_up=(-0.13, -0.06, 0.99))
 window.record(scene, out_path=path_to_write+'MS_NMOSD_NAWM_LH.png', size=(800, 800), magnification=2)
+
+#scene.camera_info()
+
+####MS_NMOSD_NAWM
+scene = window.Scene()
+# Create an isosurface of the binary mask image to form the "glass brain"
+vol_actor = actor.contour_from_roi(mask_data, affine=affine_mask, opacity=0.1, color=(244, 244, 244))
+# Add the isosurface to the visualization window
+scene.add(vol_actor)
+
+
+# Uncomment the line below to show to display the window
+#window.show(scene, size=(800, 800), reset_camera=False)
+scene.set_camera(position=(-5.94, 301.48, 49.25), focal_point=(-2.63, 20.69, -7.20), view_up=(-0.04, -0.20, 0.98))
+window.record(scene, out_path=path_to_write+'HC_NMOSD_NAWM_front.png', size=(800, 800), magnification=2)
+
+scene.set_camera(position=(341.83, 58.75, -10.27), focal_point=(-2.63, 20.69, -7.20), view_up=(0.00, 0.06, 1.00))
+window.record(scene, out_path=path_to_write+'HC_NMOSD_NAWM_RH.png', size=(800, 800), magnification=2)
+
+scene.set_camera(position=(-340.76, -38.83, -54.52), focal_point=(-2.63, 20.69, -7.20), view_up=(-0.13, -0.06, 0.99))
+window.record(scene, out_path=path_to_write+'HC_NMOSD_NAWM_LH.png', size=(800, 800), magnification=2)
 
 #scene.camera_info()
 
@@ -387,22 +408,24 @@ plt.savefig(path_to_write+'LD_legend.png', dpi=300)
 ###Final NAWM plot
 # Load the two images to be stacked
 image1 = Image.open(path_to_write+'HC_MS_NAWM_combined.png')
-image2 = Image.open(path_to_write+'MS_NMOSD_NAWM_combined.png')
+image2 = Image.open(path_to_write+'HC_NMOSD_NAWM_combined.png')
+image3 = Image.open(path_to_write+'MS_NMOSD_NAWM_combined.png')
 
 # Create a new image with the desired dimensions
-width = max(image1.width, image2.width)
-height = image1.height + image2.height
+width = max(image1.width, image2.width, image3.width)
+height = image1.height + image2.height + image3.height
 stacked_image = Image.new('RGB', (width, height))
 
-# Paste the two images onto the stacked image
+# Paste the images onto the stacked image
 stacked_image.paste(image1, (0, 0))
 stacked_image.paste(image2, (0, image1.height))
+stacked_image.paste(image3, (0, image1.height + image2.height))
 
 # Load the legend image
-legend_image = Image.open(path_to_write+'LD_legend.png')
+legend_image = Image.open(path_to_write+'NAWM_legend.png')
 
 # Resize image3 to 200x1000 pixels
-legend_image = legend_image.resize((600, 3200))
+legend_image = legend_image.resize((1000, 4800))
 
 # Calculate the new dimensions for the final figure
 final_width = width + legend_image.width
@@ -418,14 +441,20 @@ final_image.paste(legend_image, (width, (final_height - legend_image.height) // 
 # Add titles to the individual images
 # Assuming you have text for titles: title1, title2, title3
 
-font = ImageFont.truetype("Arial", 45) # Specify your desired font and size
+font = ImageFont.truetype("Arial", 100) # Specify your desired font and size
 
 draw = ImageDraw.Draw(final_image)
 draw.text((image1.width/2, 20), "HC-MS", font=font, fill=(255, 255, 255))  # Position and text for title1
-draw.text((image1.width/2, image1.height + 20), "NMOSD-MS", font=font, fill=(255, 255, 255))  # Position and text for title2
+draw.text((40, 20), "A", font=font, fill=(255, 255, 255))
+draw.text((image1.width/2, image1.height + 20), "NMOSD-HC", font=font, fill=(255, 255, 255))  # Position and text for title2
+draw.text((40, image1.height + 20), "B", font=font, fill=(255, 255, 255))
+draw.text((image1.width/2, image1.height*2 + 20), "NMOSD-MS", font=font, fill=(255, 255, 255))  # Position and text for title3
+draw.text((40, image1.height*2  + 20), "C", font=font, fill=(255, 255, 255))
 
 # Save the final image
-final_image.save(path_to_write+'NAWM_tracts_plot.png', dpi=(300, 300))
+final_image = final_image.resize((3600, 3000))
+
+final_image.save(path_to_write+'NAWM_tracts_plot_fixed.png', dpi=(300, 300))
 
 
 
@@ -434,10 +463,6 @@ final_image.save(path_to_write+'NAWM_tracts_plot.png', dpi=(300, 300))
 image1 = Image.open(path_to_write+'MS_HC_LD_combined.png')
 image2 = Image.open(path_to_write+'NMOSD_HC_LD_combined.png')
 image3 = Image.open(path_to_write+'NMOSD_MS_LD_combined.png')
-# Create a new image with the desired dimensions
-width = max(image1.width, image2.width)
-height = image1.height + image2.height
-stacked_image = Image.new('RGB', (width, height))
 
 # Create a new image with the desired dimensions
 width = max(image1.width, image2.width, image3.width)
@@ -469,16 +494,18 @@ final_image.paste(legend_image, (width, (final_height - legend_image.height) // 
 # Add titles to the individual images
 # Assuming you have text for titles: title1, title2, title3
 
-font = ImageFont.truetype("Arial", 45) # Specify your desired font and size
+font = ImageFont.truetype("Arial", 65) # Specify your desired font and size
 
 draw = ImageDraw.Draw(final_image)
 draw.text((image1.width/2, 20), "HC-MS", font=font, fill=(255, 255, 255))  # Position and text for title1
+draw.text((40, 20), "A", font=font, fill=(255, 255, 255))
 draw.text((image1.width/2, image1.height + 20), "NMOSD-HC", font=font, fill=(255, 255, 255))  # Position and text for title2
+draw.text((40, image1.height + 20), "B", font=font, fill=(255, 255, 255))
 draw.text((image1.width/2, image1.height*2 + 20), "NMOSD-MS", font=font, fill=(255, 255, 255))  # Position and text for title3
-
+draw.text((40, image1.height*2  + 20), "C", font=font, fill=(255, 255, 255))
 
 # Save the final image
-final_image.save(path_to_write+'LD_tracts_plot.png', dpi=(300, 300))
+final_image.save(path_to_write+'LD_tracts_plot_fixed.png', dpi=(300, 300))
 
 
 
