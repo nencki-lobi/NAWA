@@ -1,4 +1,4 @@
-Helpful UNIX shit
+Helpful UNIX stuff
 =================
 
 To create multiple sub-folders
